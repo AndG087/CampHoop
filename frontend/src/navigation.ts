@@ -1,3 +1,5 @@
+import type { Permission } from './auth/roles'
+
 export type NavItem = {
   path: string
   label: string
@@ -6,6 +8,8 @@ export type NavItem = {
   mobileLabel?: string
   /** Aparece direto no menu inferior do celular; os demais ficam em "Mais". */
   mobile?: boolean
+  /** Só aparece para perfis com esta permissão. */
+  permission?: Permission
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -15,7 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/campeonatos', label: 'Campeonatos', icon: '♜' },
   { path: '/atletas', label: 'Atletas', icon: '◎', mobile: true },
   { path: '/ao-vivo', label: 'Partida ao vivo', mobileLabel: 'Ao vivo', icon: '◉', mobile: true },
-  { path: '/quadro-tatico', label: 'Quadro tático', icon: '⌗' },
+  { path: '/quadro-tatico', label: 'Quadro tático', icon: '⌗', permission: 'tactics.use' },
 ]
 
 /** Item do menu ativo para o caminho atual (inclui páginas de detalhe, ex.: /times/sub17). */

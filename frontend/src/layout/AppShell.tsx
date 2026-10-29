@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { ROLE_INFO } from '../auth/roles'
+import { useSession } from '../auth/session'
 import { NAV_ITEMS, activeNavItem } from '../navigation'
 import './AppShell.css'
 
@@ -26,11 +28,14 @@ function BellIcon() {
 
 export default function AppShell() {
   const { pathname } = useLocation()
+  const { user, can } = useSession()
   const [moreOpen, setMoreOpen] = useState(false)
   const current = activeNavItem(pathname)
-  const mobileItems = NAV_ITEMS.filter((item) => item.mobile)
-  const moreItems = NAV_ITEMS.filter((item) => !item.mobile)
+  const navItems = NAV_ITEMS.filter((item) => !item.permission || can(item.permission))
+  const mobileItems = navItems.filter((item) => item.mobile)
+  const moreItems = navItems.filter((item) => !item.mobile)
   const moreActive = moreItems.some((item) => item === current)
+  const roleLabel = user ? ROLE_INFO[user.role].label : ''
 
   useEffect(() => setMoreOpen(false), [pathname])
 
@@ -40,7 +45,7 @@ export default function AppShell() {
         <Brand />
         <div className="sidebar__label">MENU PRINCIPAL</div>
         <nav className="sidebar__nav" aria-label="Menu principal">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink key={item.path} to={item.path} end={item.path === '/'} className="sidebar__link">
               <span className="sidebar__icon" aria-hidden="true">{item.icon}</span>
               {item.label}
@@ -53,10 +58,11 @@ export default function AppShell() {
             <strong>2025 / 2026 ⌄</strong>
           </button>
           <div className="user">
-            <div className="avatar" aria-hidden="true">MC</div>
-            <div>
-              Marina Costa
-              <small>Treinadora · Sub-17</small>
+            <div className="avatar" aria-hidden="true">{user?.initials}</div>
+            <div className="user__info">
+              {user?.name}
+              <small>{user?.context}</small>
+              <Link to="/login" className="user__switch">Trocar perfil</Link>
             </div>
           </div>
         </div>
@@ -72,7 +78,10 @@ export default function AppShell() {
             <button type="button" className="notif" aria-label="Notificações">
               <BellIcon />
             </button>
-            <div className="avatar avatar--light" aria-hidden="true">MC</div>
+            <Link to="/login" className="role-pill" title="Perfil de demonstração. Clique para trocar.">
+              <span className="role-pill__demo">DEMO</span>
+              {roleLabel}
+            </Link>
           </div>
         </header>
         <section className="content">
@@ -88,6 +97,10 @@ export default function AppShell() {
               {item.label}
             </NavLink>
           ))}
+          <Link to="/login" className="more-sheet__link">
+            <span aria-hidden="true">⇄</span>
+            Trocar perfil · {roleLabel}
+          </Link>
         </div>
       )}
 
