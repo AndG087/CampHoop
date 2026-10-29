@@ -1,0 +1,195 @@
+.login {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.login__side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 50px;
+  overflow: hidden;
+  color: var(--on-navy);
+  background: linear-gradient(150deg, var(--navy), var(--navy-3));
+}
+
+/* Círculo central da quadra, ao fundo */
+.login__side::after {
+  content: '';
+  position: absolute;
+  right: -160px;
+  bottom: -160px;
+  width: 460px;
+  height: 460px;
+  border: 2px solid #304b5a;
+  border-radius: 50%;
+  outline: 2px solid #304b5a;
+  outline-offset: 90px;
+}
+
+.login__side .brand {
+  padding: 0;
+}
+
+.login__pitch {
+  position: relative;
+  z-index: 1;
+}
+
+.login__eyebrow {
+  color: var(--accent-light);
+}
+
+.login__pitch h1 {
+  max-width: 490px;
+  margin: 14px 0;
+  font-size: 52px;
+  line-height: 1.05;
+  letter-spacing: -3px;
+  text-wrap: balance;
+}
+
+.login__pitch p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #afc0b7;
+}
+
+.login__legal {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  color: #7f9288;
+}
+
+.login__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.login__panel {
+  width: min(460px, 100%);
+}
+
+.login__panel h2 {
+  margin: 14px 0 7px;
+  font-size: 28px;
+  letter-spacing: -0.8px;
+}
+
+.login__intro {
+  margin: 0 0 22px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.roles {
+  display: grid;
+  gap: 10px;
+}
+
+.role {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.role:hover {
+  border-color: #efbd83;
+  background: #fff4e8;
+}
+
+.role--current {
+  border-color: var(--accent);
+  background: #fff6eb;
+}
+
+.role__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.role__head b {
+  font-size: 14px;
+}
+
+.role__head small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.role__badge {
+  margin-left: auto;
+}
+
+.role__summary {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.role__can {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.role__can li::before {
+  content: '✓ ';
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+
+  .login__side {
+    min-height: auto;
+    padding: 25px 16px;
+  }
+
+  .login__pitch h1 {
+    font-size: 34px;
+    letter-spacing: -1.5px;
+  }
+
+  .login__pitch p {
+    font-size: 12px;
+  }
+
+  .login__side::after {
+    right: -220px;
+    bottom: -260px;
+  }
+
+  .login__box {
+    padding: 28px 16px 40px;
+  }
+
+  .login__panel h2 {
+    font-size: 24px;
+  }
+}

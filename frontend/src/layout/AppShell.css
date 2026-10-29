@@ -143,11 +143,53 @@
   font-size: 12px;
 }
 
+.user__info {
+  min-width: 0;
+}
+
 .user small {
   display: block;
   margin-top: 2px;
   font-size: 10px;
   color: var(--on-navy-faint);
+}
+
+.user__switch {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-light);
+}
+
+.user__switch:hover {
+  text-decoration: underline;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.role-pill:hover {
+  border-color: var(--accent);
+}
+
+.role-pill__demo {
+  padding: 3px 6px;
+  border-radius: 99px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: 500 9px var(--font-mono);
+  letter-spacing: 0.8px;
 }
 
 .avatar {
@@ -350,5 +392,11 @@
   .more-sheet__link.active {
     background: var(--navy-hover);
     color: var(--on-navy);
+  }
+}
+
+@media (max-width: 440px) {
+  .search {
+    display: none;
   }
 }

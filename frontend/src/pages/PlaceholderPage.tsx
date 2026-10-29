@@ -1,3 +1,5 @@
+import { Can } from '../auth/guards'
+import type { Permission } from '../auth/roles'
 import './PlaceholderPage.css'
 
 const ISSUES_URL = 'https://github.com/AndG087/CampHoop/issues'
@@ -9,16 +11,27 @@ type Props = {
   stage: number
   /** Número da issue no GitHub que acompanha a página. */
   issue: number
+  /** Ação principal da página, visível só para quem tem a permissão. */
+  action?: { label: string; permission: Permission }
 }
 
 /** Página reservada: a rota e o menu já existem, o conteúdo chega na etapa indicada. */
-export default function PlaceholderPage({ title, subtitle, stage, issue }: Props) {
+export default function PlaceholderPage({ title, subtitle, stage, issue, action }: Props) {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
+        <div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+        </div>
+        {action && (
+          <Can permission={action.permission}>
+            <button type="button" className="btn btn--accent" title="Ainda sem função: chega na etapa desta página.">
+              {action.label}
+            </button>
+          </Can>
+        )}
       </div>
       <div className="card placeholder">
         <span className="pill">EM CONSTRUÇÃO · ETAPA {stage}</span>
