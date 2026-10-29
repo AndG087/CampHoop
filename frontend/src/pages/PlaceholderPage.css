@@ -1,0 +1,46 @@
+.page-head {
+  margin-bottom: 27px;
+}
+
+.page-head h1 {
+  margin: 7px 0 5px;
+  font-size: 30px;
+  letter-spacing: -1.2px;
+  text-wrap: balance;
+}
+
+.page-head p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.placeholder {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 28px;
+  border-style: dashed;
+}
+
+.placeholder p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.placeholder__link {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.placeholder__link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .page-head h1 {
+    font-size: 25px;
+  }
+}

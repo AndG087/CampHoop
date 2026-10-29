@@ -1,0 +1,48 @@
+/* Identidade visual do CampHoop, trazida do tema "basketball" do protótipo
+   (outputs/camphoop-prototipo.html). Componentes usam só estes tokens. */
+:root {
+  /* Base */
+  --ink: #202a32;
+  --muted: #77746d;
+  --paper: #f5f1e8;
+  --surface: #fffdf8;
+  --line: #e8dfd1;
+  --line-soft: #eee6d8;
+  --soft: #f2e4d1;
+
+  /* Azul-marinho (menu, destaques escuros) */
+  --navy: #172638;
+  --navy-2: #20394b;
+  --navy-3: #264052;
+  --navy-hover: #2d4657;
+  --navy-line: #405362;
+  --on-navy: #ffffff;
+  --on-navy-muted: #b8c4bf;
+  --on-navy-faint: #8b9b94;
+
+  /* Laranja (ação principal, bola) */
+  --accent: #f28b2e;
+  --accent-hover: #ffa44e;
+  --accent-strong: #e77d2d;
+  --accent-light: #ffad5e;
+  --accent-soft: #f8e8d3;
+  --accent-text: #94531e;
+  --on-accent: #172638;
+  --live: #e45c35;
+
+  /* Madeira (quadra) */
+  --wood: #e9d5b8;
+  --wood-line: #bd9a72;
+  --court-line: #e7b98244;
+
+  /* Tipografia */
+  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, Consolas, monospace;
+
+  /* Forma */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 15px;
+  --sidebar-width: 244px;
+  --topbar-height: 73px;
+}
