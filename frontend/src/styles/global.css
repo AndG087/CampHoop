@@ -1,0 +1,105 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  /* Marcações de quadra sutis: arco no canto e linha central */
+  background-image:
+    radial-gradient(ellipse at 94% 7%, transparent 0 76px, var(--court-line) 77px 78px, transparent 79px),
+    linear-gradient(90deg, transparent 0 49.9%, #e7b98222 50%, transparent 50.1%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.eyebrow {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 16px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--navy);
+  color: var(--on-navy);
+}
+
+.btn--accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--accent:hover {
+  background: var(--accent-hover);
+}
+
+.btn--ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 19px;
+}
+
+.pill {
+  display: inline-block;
+  font: 10px var(--font-mono);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  padding: 5px 8px;
+  border-radius: 99px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,354 @@
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  min-height: 100vh;
+}
+
+/* Menu lateral */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 27px 17px;
+  color: var(--on-navy);
+  background: linear-gradient(155deg, var(--navy), var(--navy-2));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 12px 32px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.brand small {
+  display: block;
+  margin-top: 1px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  color: #a8b9b1;
+}
+
+/* Bola de basquete desenhada com as duas linhas curvas */
+.brand__ball {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: var(--accent);
+  overflow: hidden;
+}
+
+.brand__ball::before,
+.brand__ball::after {
+  content: '';
+  position: absolute;
+  border: 1px solid var(--navy);
+  border-radius: 50%;
+}
+
+.brand__ball::before {
+  inset: 4px 10px;
+}
+
+.brand__ball::after {
+  inset: 10px 4px;
+}
+
+.sidebar__label {
+  padding: 10px 13px;
+  font: 10px var(--font-mono);
+  letter-spacing: 1.4px;
+  color: #73867d;
+}
+
+.sidebar__nav {
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--on-navy-muted);
+  transition: background 0.15s;
+}
+
+.sidebar__link:hover,
+.sidebar__link.active {
+  background: var(--navy-hover);
+  color: var(--on-navy);
+}
+
+.sidebar__link.active::before {
+  content: '';
+  position: absolute;
+  left: -17px;
+  width: 3px;
+  height: 19px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+
+.sidebar__icon {
+  width: 18px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.sidebar__bottom {
+  margin-top: auto;
+}
+
+.season {
+  display: block;
+  width: calc(100% - 10px);
+  margin: 0 5px 19px;
+  padding: 14px;
+  border: 1px solid var(--navy-line);
+  border-radius: 13px;
+  text-align: left;
+  color: var(--on-navy);
+}
+
+.season span {
+  font-size: 10px;
+  color: #94a69d;
+}
+
+.season strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 7px 0;
+  border-top: 1px solid #2c4039;
+  font-size: 12px;
+}
+
+.user small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--on-navy-faint);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #dce6d9;
+  color: #375148;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.avatar--light {
+  background: var(--soft);
+  color: var(--accent-text);
+}
+
+/* Área principal */
+.main {
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: var(--topbar-height);
+  padding: 0 42px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.55);
+}
+
+.crumb {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb b {
+  color: var(--ink);
+}
+
+.crumb__sep {
+  color: #b6bdb8;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.search {
+  width: 210px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  font-size: 12px;
+  outline: none;
+}
+
+.search:focus {
+  border-color: var(--accent);
+}
+
+.notif {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.notif::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+}
+
+.content {
+  max-width: 1440px;
+  margin: auto;
+  padding: 37px 42px 60px;
+}
+
+/* Celular: menu inferior e painel "Mais" */
+.mobile-nav,
+.more-sheet {
+  display: none;
+}
+
+@media (max-width: 1050px) {
+  .app {
+    grid-template-columns: 205px 1fr;
+  }
+
+  .topbar {
+    padding: 0 24px;
+  }
+
+  .content {
+    padding: 30px 24px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app {
+    display: block;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .topbar {
+    height: 59px;
+    padding: 0 16px;
+  }
+
+  .search {
+    width: 140px;
+    padding: 9px;
+  }
+
+  .notif {
+    display: none;
+  }
+
+  .content {
+    padding: 24px 16px 34px;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    z-index: 10;
+    inset: auto 0 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--navy);
+  }
+
+  .mobile-nav__link {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    font-size: 9px;
+    color: #aab9b2;
+  }
+
+  .mobile-nav__link span {
+    font-size: 17px;
+  }
+
+  .mobile-nav__link.active {
+    color: var(--accent-light);
+  }
+
+  .more-sheet {
+    position: fixed;
+    z-index: 9;
+    right: 8px;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    gap: 2px;
+    min-width: 200px;
+    padding: 8px;
+    border-radius: 12px;
+    background: var(--navy-2);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+  }
+
+  .more-sheet__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--on-navy-muted);
+  }
+
+  .more-sheet__link.active {
+    background: var(--navy-hover);
+    color: var(--on-navy);
+  }
+}
