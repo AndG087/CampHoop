@@ -67,7 +67,7 @@ export default function AthletePage() {
           <dl className="facts">
             <div><dt>Idade</dt><dd>{athlete.age} anos</dd></div>
             <div><dt>Altura</dt><dd>{formatHeight(athlete.heightCm)}</dd></div>
-            <div><dt>Equipe</dt><dd>{athlete.team.name}</dd></div>
+            <div><dt>Equipe</dt><dd><Link to={`/times/${athlete.team.id}`} className="facts__link">{athlete.team.name}</Link></dd></div>
             <div><dt>Clube</dt><dd>{athlete.team.club.name}</dd></div>
             <div><dt>No clube desde</dt><dd>{formatMonthYear(athlete.memberSince)}</dd></div>
             {athlete.private && (

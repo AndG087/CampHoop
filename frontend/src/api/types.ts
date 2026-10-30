@@ -94,3 +94,25 @@ export type PublicGame = {
   venue: string | null
   competition: string | null
 }
+
+/** Equipe na lista de times. Campanha e médias saem das partidas encerradas. */
+export type TeamSummary = {
+  team: Team
+  coach: string
+  athletes: number
+  games: number
+  wins: number
+  losses: number
+  /** Campeonatos de que a equipe participa na temporada. */
+  competitions: Pick<Competition, 'id' | 'name' | 'status'>[]
+}
+
+export type TeamProfile = TeamSummary & {
+  pointsFor: number // média por jogo
+  pointsAgainst: number // média por jogo
+  pointDiff: number // saldo médio por jogo, calculado dos placares (não das médias arredondadas)
+  winRate: number // 0 a 100
+  roster: AthleteSummary[]
+  recentGames: PublicGame[]
+  nextGame: PublicGame | null
+}

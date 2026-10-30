@@ -169,6 +169,86 @@ a {
   border-radius: 99px;
 }
 
+/* Link "voltar" no topo das páginas de detalhe */
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+/* Cards de número (perfil de atleta e de equipe) */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  min-height: 104px;
+}
+
+.stat__label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 29px;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-foot {
+  margin: 8px 2px 0;
+  font-size: 11px;
+}
+
+@media (max-width: 520px) {
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .stat {
+    min-height: 90px;
+    padding: 14px;
+  }
+
+  .stat strong {
+    font-size: 24px;
+  }
+}
+
+/* Filtros em botões (listas de atletas e de equipes) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 11px;
+  color: #647068;
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--on-navy);
+}
+
 .pill--warn {
   background: #fde3d6;
   color: #a33a14;

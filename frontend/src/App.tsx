@@ -7,6 +7,8 @@ import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import PublicHomePage from './pages/PublicHomePage'
+import TeamPage from './pages/TeamPage'
+import TeamsPage from './pages/TeamsPage'
 
 function NotFound() {
   return (
@@ -40,8 +42,8 @@ export default function App() {
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireSession />}>
         <Route element={<AppShell />}>
-          <Route path="times" element={<PlaceholderPage title="Times" subtitle="Suas equipes, elencos e desempenho em um só lugar." stage={4} issue={8} action={{ label: '+ Criar equipe', permission: 'team.manage' }} />} />
-          <Route path="times/:teamId" element={<PlaceholderPage title="Perfil do time" subtitle="Elenco, resumo da temporada e últimos resultados." stage={4} issue={8} action={{ label: 'Editar equipe', permission: 'team.manage' }} />} />
+          <Route path="times" element={<TeamsPage />} />
+          <Route path="times/:teamId" element={<TeamPage />} />
           <Route path="agenda" element={<PlaceholderPage title="Agenda" subtitle="Calendário de jogos e treinos das equipes." stage={5} issue={9} action={{ label: '+ Agendar jogo', permission: 'schedule.manage' }} />} />
           <Route path="campeonatos" element={<PlaceholderPage title="Campeonatos" subtitle="Inscrições, classificação e tabela de jogos." stage={7} issue={11} />} />
           <Route path="atletas" element={<AthletesPage />} />
