@@ -23,3 +23,7 @@ export function canViewAthletePrivate(user: DemoUser | null, athlete: AthleteRef
 export function canEditAthlete(user: DemoUser | null, athlete: AthleteRef): boolean {
   return !!user && roleCan(user.role, 'athlete.manage') && coachesTeam(user, athlete.teamId)
 }
+
+export function canEditTeam(user: DemoUser | null, teamId: string): boolean {
+  return !!user && roleCan(user.role, 'team.manage') && coachesTeam(user, teamId)
+}

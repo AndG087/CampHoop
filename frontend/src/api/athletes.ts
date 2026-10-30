@@ -29,7 +29,7 @@ function ageOn(birthDate: string, today: string): number {
   return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0)
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10
+export const round1 = (n: number) => Math.round(n * 10) / 10
 
 function gameLines(athleteId: string, teamId: string): GameLine[] {
   return statLines
@@ -47,7 +47,7 @@ function average(lines: GameLine[], key: 'points' | 'rebounds' | 'assists'): num
   return lines.length ? round1(lines.reduce((sum, l) => sum + l[key], 0) / lines.length) : 0
 }
 
-function toSummary(row: (typeof athletes)[number]): AthleteSummary {
+export function toSummary(row: (typeof athletes)[number]): AthleteSummary {
   const lines = gameLines(row.id, row.teamId)
   return {
     id: row.id,

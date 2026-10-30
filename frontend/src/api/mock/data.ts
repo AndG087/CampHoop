@@ -15,17 +15,17 @@ export const clubs = [
   { id: 'fenix-clube', name: 'Fênix Clube', shortName: 'FC', city: 'Campinas, SP' },
 ]
 
-type TeamRow = { id: string; clubId: string; category: Category; gender: Gender }
+type TeamRow = { id: string; clubId: string; category: Category; gender: Gender; coach: string }
 
 export const teams: TeamRow[] = [
-  { id: 'qv-sub17-f', clubId: 'quadra-viva', category: 'Sub-17', gender: 'Feminino' },
-  { id: 'qv-sub15-m', clubId: 'quadra-viva', category: 'Sub-15', gender: 'Masculino' },
-  { id: 'qv-sub13-x', clubId: 'quadra-viva', category: 'Sub-13', gender: 'Misto' },
-  { id: 'sa-sub17-f', clubId: 'sao-atlas', category: 'Sub-17', gender: 'Feminino' },
-  { id: 'vb-sub17-f', clubId: 'vale-basket', category: 'Sub-17', gender: 'Feminino' },
-  { id: 'vb-sub15-m', clubId: 'vale-basket', category: 'Sub-15', gender: 'Masculino' },
-  { id: 'fc-sub17-f', clubId: 'fenix-clube', category: 'Sub-17', gender: 'Feminino' },
-  { id: 'fc-sub13-x', clubId: 'fenix-clube', category: 'Sub-13', gender: 'Misto' },
+  { id: 'qv-sub17-f', clubId: 'quadra-viva', category: 'Sub-17', gender: 'Feminino', coach: 'Marina Costa' },
+  { id: 'qv-sub15-m', clubId: 'quadra-viva', category: 'Sub-15', gender: 'Masculino', coach: 'Paulo Henrique' },
+  { id: 'qv-sub13-x', clubId: 'quadra-viva', category: 'Sub-13', gender: 'Misto', coach: 'Renata Lopes' },
+  { id: 'sa-sub17-f', clubId: 'sao-atlas', category: 'Sub-17', gender: 'Feminino', coach: 'Marcos Vidal' },
+  { id: 'vb-sub17-f', clubId: 'vale-basket', category: 'Sub-17', gender: 'Feminino', coach: 'Tatiane Rocha' },
+  { id: 'vb-sub15-m', clubId: 'vale-basket', category: 'Sub-15', gender: 'Masculino', coach: 'André Barros' },
+  { id: 'fc-sub17-f', clubId: 'fenix-clube', category: 'Sub-17', gender: 'Feminino', coach: 'Juliana Prates' },
+  { id: 'fc-sub13-x', clubId: 'fenix-clube', category: 'Sub-13', gender: 'Misto', coach: 'Rogério Teles' },
 ]
 
 type AthleteRow = {
@@ -125,3 +125,10 @@ export const upcomingMatches = [
   { id: 'm-203', date: '2025-10-31', time: '18:00', homeTeamId: 'qv-sub15-m', awayTeamId: 'vb-sub15-m', competitionId: 'liga-escolar-sp', venue: 'Quadra Norte', live: null },
   { id: 'm-111', date: '2025-11-02', time: '10:00', homeTeamId: 'qv-sub17-f', awayTeamId: 'fc-sub17-f', competitionId: 'liga-escolar-sp', venue: 'Ginásio Central · Quadra 1', live: null },
 ]
+
+/** Equipes inscritas em cada campeonato (uma equipe pode jogar vários). */
+export const competitionTeams: Record<string, string[]> = {
+  'liga-escolar-sp': ['qv-sub17-f', 'qv-sub15-m', 'qv-sub13-x', 'sa-sub17-f', 'vb-sub17-f', 'vb-sub15-m', 'fc-sub17-f', 'fc-sub13-x'],
+  'copa-base-paulista': ['qv-sub17-f', 'qv-sub15-m', 'sa-sub17-f', 'vb-sub15-m'],
+  'circuito-metropolitano': ['qv-sub17-f', 'sa-sub17-f', 'vb-sub17-f', 'fc-sub17-f'],
+}

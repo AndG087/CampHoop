@@ -69,7 +69,7 @@ export type DemoUser = {
   role: Role
   /** Linha de contexto abaixo do nome, ex.: "Treinadora · Sub-17". */
   context: string
-  /** Equipe que o técnico comanda. */
+  /** Equipe do usuário: a que o técnico comanda ou em que o atleta joga. */
   teamId?: string
   /** Cadastro de atleta ligado a esta conta. */
   athleteId?: string
@@ -77,7 +77,7 @@ export type DemoUser = {
 
 export const DEMO_USERS: Record<Role, DemoUser> = {
   tecnico: { id: 'u-marina', email: 'marina@camphoop.demo', name: 'Marina Costa', initials: 'MC', role: 'tecnico', context: 'Treinadora · Quadra Viva Sub-17', teamId: 'qv-sub17-f' },
-  atleta: { id: 'u-luiza', email: 'luiza@camphoop.demo', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #8 · Quadra Viva Sub-17', athleteId: 'luiza-martins' },
+  atleta: { id: 'u-luiza', email: 'luiza@camphoop.demo', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #8 · Quadra Viva Sub-17', teamId: 'qv-sub17-f', athleteId: 'luiza-martins' },
   estatistico: { id: 'u-carlos', email: 'carlos@camphoop.demo', name: 'Carlos Mendes', initials: 'CM', role: 'estatistico', context: 'Estatístico · Liga Escolar SP' },
   basico: { id: 'u-joao', email: 'joao@camphoop.demo', name: 'João Pereira', initials: 'JP', role: 'basico', context: 'Torcedor' },
 }

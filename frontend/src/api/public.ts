@@ -17,9 +17,9 @@ export type PublicGames = {
   results: PublicGame[]
 }
 
-export async function listPublicGames(): Promise<PublicGames> {
-  await delay()
-  const scheduled: PublicGame[] = upcomingMatches.map((m) => ({
+/** Jogo agendado ou em andamento, no formato público. */
+export function scheduledGame(m: (typeof upcomingMatches)[number]): PublicGame {
+  return {
     id: m.id,
     date: m.date,
     time: m.time,
@@ -31,26 +31,35 @@ export async function listPublicGames(): Promise<PublicGames> {
     period: m.live?.period ?? null,
     venue: m.venue,
     competition: competitions.find((c) => c.id === m.competitionId)?.name ?? null,
-  }))
-  const results: PublicGame[] = [...matches]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 4)
-    .map((m) => ({
-      id: m.id,
-      date: m.date,
-      time: null,
-      status: 'encerrado',
-      home: teamById(m.homeTeamId),
-      away: teamById(m.awayTeamId),
-      homeScore: m.homeScore,
-      awayScore: m.awayScore,
-      period: null,
-      venue: null,
-      competition: null,
-    }))
+  }
+}
+
+/** Jogo encerrado, no formato público. */
+export function finishedGame(m: (typeof matches)[number]): PublicGame {
+  return {
+    id: m.id,
+    date: m.date,
+    time: null,
+    status: 'encerrado',
+    home: teamById(m.homeTeamId),
+    away: teamById(m.awayTeamId),
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    period: null,
+    venue: null,
+    competition: null,
+  }
+}
+
+export async function listPublicGames(): Promise<PublicGames> {
+  await delay()
+  const scheduled = upcomingMatches.map(scheduledGame)
   return {
     live: scheduled.filter((g) => g.status === 'ao-vivo'),
     upcoming: scheduled.filter((g) => g.status === 'agendado'),
-    results,
+    results: [...matches]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 4)
+      .map(finishedGame),
   }
 }
