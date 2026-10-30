@@ -1,0 +1,56 @@
+/**
+ * Dados abertos a qualquer pessoa, sem login (issue #19): torneios e jogos.
+ * Depois viram GET /public/competitions e GET /public/games no backend.
+ */
+import { delay, teamById } from './athletes'
+import { competitions, matches, upcomingMatches } from './mock/data'
+import type { Competition, PublicGame } from './types'
+
+export async function listCompetitions(): Promise<Competition[]> {
+  await delay()
+  return competitions
+}
+
+export type PublicGames = {
+  live: PublicGame[]
+  upcoming: PublicGame[]
+  results: PublicGame[]
+}
+
+export async function listPublicGames(): Promise<PublicGames> {
+  await delay()
+  const scheduled: PublicGame[] = upcomingMatches.map((m) => ({
+    id: m.id,
+    date: m.date,
+    time: m.time,
+    status: m.live ? 'ao-vivo' : 'agendado',
+    home: teamById(m.homeTeamId),
+    away: teamById(m.awayTeamId),
+    homeScore: m.live?.homeScore ?? null,
+    awayScore: m.live?.awayScore ?? null,
+    period: m.live?.period ?? null,
+    venue: m.venue,
+    competition: competitions.find((c) => c.id === m.competitionId)?.name ?? null,
+  }))
+  const results: PublicGame[] = [...matches]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 4)
+    .map((m) => ({
+      id: m.id,
+      date: m.date,
+      time: null,
+      status: 'encerrado',
+      home: teamById(m.homeTeamId),
+      away: teamById(m.awayTeamId),
+      homeScore: m.homeScore,
+      awayScore: m.awayScore,
+      period: null,
+      venue: null,
+      competition: null,
+    }))
+  return {
+    live: scheduled.filter((g) => g.status === 'ao-vivo'),
+    upcoming: scheduled.filter((g) => g.status === 'agendado'),
+    results,
+  }
+}

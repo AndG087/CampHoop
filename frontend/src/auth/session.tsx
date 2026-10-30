@@ -4,9 +4,11 @@ import { DEMO_USERS, ROLES, roleCan, type DemoUser, type Permission, type Role }
 const STORAGE_KEY = 'camphoop.demoRole'
 
 type Session = {
+  /** `null` = visitante, navegando sem login. */
   user: DemoUser | null
   can: (permission: Permission) => boolean
-  signIn: (role: Role) => void
+  /** Entra com uma conta de demonstração; devolve `false` se o e-mail não existir. */
+  signIn: (email: string, password: string) => boolean
   signOut: () => void
 }
 
@@ -33,9 +35,13 @@ function storeRole(role: Role | null) {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role | null>(readStoredRole)
 
-  const signIn = useCallback((next: Role) => {
-    storeRole(next)
-    setRole(next)
+  const signIn = useCallback((email: string, password: string) => {
+    const account = Object.values(DEMO_USERS).find((u) => u.email === email.trim().toLowerCase())
+    // Demonstração: qualquer senha preenchida é aceita.
+    if (!account || !password) return false
+    storeRole(account.role)
+    setRole(account.role)
+    return true
   }, [])
 
   const signOut = useCallback(() => {

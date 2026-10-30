@@ -166,6 +166,11 @@
   text-decoration: underline;
 }
 
+.more-sheet__link {
+  width: 100%;
+  text-align: left;
+}
+
 .role-pill {
   display: inline-flex;
   align-items: center;

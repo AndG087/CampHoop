@@ -1,0 +1,34 @@
+.player-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--accent-text);
+  font-weight: 800;
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-avatar--sm {
+  width: 30px;
+  height: 30px;
+  font-size: 10px;
+}
+
+.player-avatar--md {
+  width: 44px;
+  height: 44px;
+  font-size: 13px;
+}
+
+.player-avatar--lg {
+  width: 84px;
+  height: 84px;
+  font-size: 24px;
+}

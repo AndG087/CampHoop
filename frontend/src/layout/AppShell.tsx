@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { startTransition, useEffect, useState, type ReactNode } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { ROLE_INFO } from '../auth/roles'
 import { useSession } from '../auth/session'
 import { NAV_ITEMS, activeNavItem } from '../navigation'
 import './AppShell.css'
 
-function Brand() {
+export function Brand() {
   return (
     <div className="brand">
       <span className="brand__ball" aria-hidden="true" />
@@ -26,18 +26,30 @@ function BellIcon() {
   )
 }
 
-export default function AppShell() {
+/** Estrutura do sistema para quem entrou. Visitantes ficam na página pública. */
+export default function AppShell({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation()
-  const { user, can } = useSession()
+  const { user, can, signOut } = useSession()
+  const navigate = useNavigate()
   const [moreOpen, setMoreOpen] = useState(false)
   const current = activeNavItem(pathname)
   const navItems = NAV_ITEMS.filter((item) => !item.permission || can(item.permission))
   const mobileItems = navItems.filter((item) => item.mobile)
   const moreItems = navItems.filter((item) => !item.mobile)
   const moreActive = moreItems.some((item) => item === current)
-  const roleLabel = user ? ROLE_INFO[user.role].label : ''
 
   useEffect(() => setMoreOpen(false), [pathname])
+
+  if (!user) return null
+
+  function leave() {
+    // Sair e ir para a página pública no mesmo render; separado, o bloqueio
+    // das páginas internas veria a sessão vazia antes e mandaria para o login.
+    startTransition(() => {
+      signOut()
+      navigate('/')
+    })
+  }
 
   return (
     <div className="app">
@@ -58,11 +70,11 @@ export default function AppShell() {
             <strong>2025 / 2026 ⌄</strong>
           </button>
           <div className="user">
-            <div className="avatar" aria-hidden="true">{user?.initials}</div>
+            <div className="avatar" aria-hidden="true">{user.initials}</div>
             <div className="user__info">
-              {user?.name}
-              <small>{user?.context}</small>
-              <Link to="/login" className="user__switch">Trocar perfil</Link>
+              {user.name}
+              <small>{user.context}</small>
+              <button type="button" className="user__switch" onClick={leave}>Sair</button>
             </div>
           </div>
         </div>
@@ -78,15 +90,13 @@ export default function AppShell() {
             <button type="button" className="notif" aria-label="Notificações">
               <BellIcon />
             </button>
-            <Link to="/login" className="role-pill" title="Perfil de demonstração. Clique para trocar.">
+            <span className="role-pill" title={`Conta de demonstração: ${user.name}`}>
               <span className="role-pill__demo">DEMO</span>
-              {roleLabel}
-            </Link>
+              {ROLE_INFO[user.role].label}
+            </span>
           </div>
         </header>
-        <section className="content">
-          <Outlet />
-        </section>
+        <section className="content">{children ?? <Outlet />}</section>
       </main>
 
       {moreOpen && (
@@ -97,10 +107,10 @@ export default function AppShell() {
               {item.label}
             </NavLink>
           ))}
-          <Link to="/login" className="more-sheet__link">
-            <span aria-hidden="true">⇄</span>
-            Trocar perfil · {roleLabel}
-          </Link>
+          <button type="button" className="more-sheet__link" onClick={leave}>
+            <span aria-hidden="true">⇥</span>
+            Sair · {user.name}
+          </button>
         </div>
       )}
 
