@@ -54,6 +54,78 @@ a {
   color: var(--muted);
 }
 
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 27px;
+}
+
+.page-head h1 {
+  margin: 7px 0 5px;
+  font-size: 30px;
+  letter-spacing: -1.2px;
+  text-wrap: balance;
+}
+
+.page-head p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.section-title {
+  margin: 29px 0 13px;
+  font-size: 16px;
+  letter-spacing: -0.4px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Tabela no estilo do protótipo; rola sozinha quando não cabe na tela */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  padding: 11px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #87918a;
+}
+
+.table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table .num {
+  text-align: right;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -95,6 +167,22 @@ a {
   color: var(--accent-text);
   padding: 5px 8px;
   border-radius: 99px;
+}
+
+.pill--warn {
+  background: #fde3d6;
+  color: #a33a14;
+}
+
+.pill--muted {
+  background: var(--line-soft);
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .page-head h1 {
+    font-size: 25px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

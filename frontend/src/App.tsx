@@ -1,6 +1,8 @@
 import { Link, Route, Routes } from 'react-router'
 import { RequirePermission, RequireSession } from './auth/guards'
 import AppShell from './layout/AppShell'
+import AthletePage from './pages/AthletePage'
+import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
@@ -29,8 +31,8 @@ export default function App() {
           <Route path="times/:teamId" element={<PlaceholderPage title="Perfil do time" subtitle="Elenco, resumo da temporada e últimos resultados." stage={4} issue={8} action={{ label: 'Editar equipe', permission: 'team.manage' }} />} />
           <Route path="agenda" element={<PlaceholderPage title="Agenda" subtitle="Calendário de jogos e treinos das equipes." stage={5} issue={9} action={{ label: '+ Agendar jogo', permission: 'schedule.manage' }} />} />
           <Route path="campeonatos" element={<PlaceholderPage title="Campeonatos" subtitle="Inscrições, classificação e tabela de jogos." stage={7} issue={11} />} />
-          <Route path="atletas" element={<PlaceholderPage title="Atletas" subtitle="Lista de atletas com busca e filtros por equipe e categoria." stage={3} issue={7} action={{ label: '+ Adicionar atleta', permission: 'athlete.manage' }} />} />
-          <Route path="atletas/:athleteId" element={<PlaceholderPage title="Perfil da atleta" subtitle="Dados, estatísticas e desenvolvimento." stage={3} issue={7} action={{ label: 'Editar perfil', permission: 'athlete.manage' }} />} />
+          <Route path="atletas" element={<AthletesPage />} />
+          <Route path="atletas/:athleteId" element={<AthletePage />} />
           <Route path="ao-vivo" element={<PlaceholderPage title="Partida ao vivo" subtitle="Placar, ações em tempo real, box score e escalação." stage={8} issue={12} action={{ label: 'Registrar ação', permission: 'match.record' }} />} />
           <Route
             path="quadro-tatico"

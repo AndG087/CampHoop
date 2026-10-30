@@ -63,11 +63,15 @@ export type DemoUser = {
   role: Role
   /** Linha de contexto abaixo do nome, ex.: "Treinadora · Sub-17". */
   context: string
+  /** Equipe que o técnico comanda. */
+  teamId?: string
+  /** Cadastro de atleta ligado a esta conta. */
+  athleteId?: string
 }
 
 export const DEMO_USERS: Record<Role, DemoUser> = {
-  tecnico: { id: 'u-marina', name: 'Marina Costa', initials: 'MC', role: 'tecnico', context: 'Treinadora · Sub-17 Feminino' },
-  atleta: { id: 'u-luiza', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #08 · Sub-17 Feminino' },
+  tecnico: { id: 'u-marina', name: 'Marina Costa', initials: 'MC', role: 'tecnico', context: 'Treinadora · Quadra Viva Sub-17', teamId: 'qv-sub17-f' },
+  atleta: { id: 'u-luiza', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #8 · Quadra Viva Sub-17', athleteId: 'luiza-martins' },
   estatistico: { id: 'u-carlos', name: 'Carlos Mendes', initials: 'CM', role: 'estatistico', context: 'Estatístico · Liga Escolar SP' },
   basico: { id: 'u-joao', name: 'João Pereira', initials: 'JP', role: 'basico', context: 'Torcedor' },
 }
