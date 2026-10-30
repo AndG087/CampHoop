@@ -67,3 +67,30 @@ export type AthleteProfile = AthleteSummary & {
     development: Development | null
   } | null
 }
+
+export type CompetitionStatus = 'em-andamento' | 'inscricoes' | 'finalizado'
+
+export type Competition = {
+  id: string
+  name: string
+  status: CompetitionStatus
+  phase: string
+  categories: string
+  teams: number
+  note: string
+}
+
+/** Jogo como aparece para o público: ao vivo, agendado ou encerrado. */
+export type PublicGame = {
+  id: string
+  date: string // AAAA-MM-DD
+  time: string | null // HH:MM
+  status: 'ao-vivo' | 'agendado' | 'encerrado'
+  home: Team
+  away: Team
+  homeScore: number | null
+  awayScore: number | null
+  period: string | null
+  venue: string | null
+  competition: string | null
+}

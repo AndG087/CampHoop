@@ -1,9 +1,13 @@
 /**
  * Perfis e permissões do CampHoop.
  *
- * Demonstração: não há autenticação real. O perfil escolhido no login fica
- * salvo no navegador. Quando o backend existir, `DemoUser` vira a resposta
- * da API de sessão e as permissões passam a ser conferidas também no servidor.
+ * Sem login, a pessoa vê a página pública com torneios e jogos (issue #19).
+ * O sistema completo é para quem entra com uma conta.
+ *
+ * Demonstração: não há autenticação real. A conta entra pelo e-mail com
+ * qualquer senha e fica salva no navegador. Quando o backend existir,
+ * `DemoUser` vira a resposta da API de sessão e as permissões passam a ser
+ * conferidas também no servidor.
  */
 
 export type Role = 'tecnico' | 'atleta' | 'estatistico' | 'basico'
@@ -58,6 +62,8 @@ export const ROLE_INFO: Record<Role, RoleInfo> = {
 
 export type DemoUser = {
   id: string
+  /** E-mail usado no login de demonstração (qualquer senha é aceita). */
+  email: string
   name: string
   initials: string
   role: Role
@@ -70,10 +76,10 @@ export type DemoUser = {
 }
 
 export const DEMO_USERS: Record<Role, DemoUser> = {
-  tecnico: { id: 'u-marina', name: 'Marina Costa', initials: 'MC', role: 'tecnico', context: 'Treinadora · Quadra Viva Sub-17', teamId: 'qv-sub17-f' },
-  atleta: { id: 'u-luiza', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #8 · Quadra Viva Sub-17', athleteId: 'luiza-martins' },
-  estatistico: { id: 'u-carlos', name: 'Carlos Mendes', initials: 'CM', role: 'estatistico', context: 'Estatístico · Liga Escolar SP' },
-  basico: { id: 'u-joao', name: 'João Pereira', initials: 'JP', role: 'basico', context: 'Torcedor' },
+  tecnico: { id: 'u-marina', email: 'marina@camphoop.demo', name: 'Marina Costa', initials: 'MC', role: 'tecnico', context: 'Treinadora · Quadra Viva Sub-17', teamId: 'qv-sub17-f' },
+  atleta: { id: 'u-luiza', email: 'luiza@camphoop.demo', name: 'Luiza Martins', initials: 'LM', role: 'atleta', context: 'Armadora #8 · Quadra Viva Sub-17', athleteId: 'luiza-martins' },
+  estatistico: { id: 'u-carlos', email: 'carlos@camphoop.demo', name: 'Carlos Mendes', initials: 'CM', role: 'estatistico', context: 'Estatístico · Liga Escolar SP' },
+  basico: { id: 'u-joao', email: 'joao@camphoop.demo', name: 'João Pereira', initials: 'JP', role: 'basico', context: 'Torcedor' },
 }
 
 export const ROLES: Role[] = ['tecnico', 'atleta', 'estatistico', 'basico']

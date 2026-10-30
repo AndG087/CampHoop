@@ -15,6 +15,19 @@ export function formatShortDate(iso: string): string {
   return `${d} ${MONTHS[m - 1]}`
 }
 
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+/** Dia do jogo relativo a hoje: "Hoje", "Amanhã" ou "Sex, 31 out". */
+export function formatGameDay(iso: string, today: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const day = new Date(y, m - 1, d)
+  const [ty, tm, td] = today.split('-').map(Number)
+  const diff = Math.round((day.getTime() - new Date(ty, tm - 1, td).getTime()) / 86_400_000)
+  if (diff === 0) return 'Hoje'
+  if (diff === 1) return 'Amanhã'
+  return `${WEEKDAYS[day.getDay()]}, ${d} ${MONTHS[m - 1]}`
+}
+
 /** "2024-03" → "Março de 2024" */
 export function formatMonthYear(ym: string): string {
   const [y, m] = ym.split('-').map(Number)

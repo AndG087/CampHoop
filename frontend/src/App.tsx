@@ -1,10 +1,12 @@
 import { Link, Route, Routes } from 'react-router'
 import { RequirePermission, RequireSession } from './auth/guards'
+import { useSession } from './auth/session'
 import AppShell from './layout/AppShell'
 import AthletePage from './pages/AthletePage'
 import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
+import PublicHomePage from './pages/PublicHomePage'
 
 function NotFound() {
   return (
@@ -20,13 +22,24 @@ function NotFound() {
   )
 }
 
+/** "/" é a página pública para quem não entrou e o Início do sistema para quem entrou. */
+function Home() {
+  const { user } = useSession()
+  if (!user) return <PublicHomePage />
+  return (
+    <AppShell>
+      <PlaceholderPage title="Início" subtitle="Próximos jogos, atividade recente e resumo da temporada." stage={6} issue={10} />
+    </AppShell>
+  )
+}
+
 export default function App() {
   return (
     <Routes>
+      <Route index element={<Home />} />
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireSession />}>
         <Route element={<AppShell />}>
-          <Route index element={<PlaceholderPage title="Início" subtitle="Próximos jogos, atividade recente e resumo da temporada." stage={6} issue={10} />} />
           <Route path="times" element={<PlaceholderPage title="Times" subtitle="Suas equipes, elencos e desempenho em um só lugar." stage={4} issue={8} action={{ label: '+ Criar equipe', permission: 'team.manage' }} />} />
           <Route path="times/:teamId" element={<PlaceholderPage title="Perfil do time" subtitle="Elenco, resumo da temporada e últimos resultados." stage={4} issue={8} action={{ label: 'Editar equipe', permission: 'team.manage' }} />} />
           <Route path="agenda" element={<PlaceholderPage title="Agenda" subtitle="Calendário de jogos e treinos das equipes." stage={5} issue={9} action={{ label: '+ Agendar jogo', permission: 'schedule.manage' }} />} />

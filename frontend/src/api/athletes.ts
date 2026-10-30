@@ -9,7 +9,7 @@ import { DEMO_TODAY, athletes, clubs, development, matches, statLines, teams } f
 import type { AthleteProfile, AthleteSummary, Club, GameLine, Team } from './types'
 
 /** Atraso curto para a interface já lidar com carregamento, como fará com a API real. */
-const delay = () => new Promise((resolve) => setTimeout(resolve, 150))
+export const delay = () => new Promise((resolve) => setTimeout(resolve, 150))
 
 function clubById(id: string): Club {
   const club = clubs.find((c) => c.id === id)
@@ -17,7 +17,7 @@ function clubById(id: string): Club {
   return club
 }
 
-function teamById(id: string): Team {
+export function teamById(id: string): Team {
   const row = teams.find((t) => t.id === id)
   if (!row) throw new Error(`Equipe desconhecida: ${id}`)
   return { id: row.id, club: clubById(row.clubId), category: row.category, gender: row.gender, name: `${row.category} ${row.gender}` }

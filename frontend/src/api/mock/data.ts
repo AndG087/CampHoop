@@ -111,3 +111,17 @@ export const development: Record<string, Development> = {
   'clara-souza': { goal: 'Melhorar o posicionamento no rebote defensivo.', progress: 80, reviewDate: '2025-11-05' },
   'duda-alves': { goal: 'Retorno gradual após entorse no tornozelo, com liberação da fisioterapia.', progress: 30, reviewDate: '2025-11-03' },
 }
+
+/** Campeonatos (página pública e, depois, etapa 7). */
+export const competitions = [
+  { id: 'liga-escolar-sp', name: 'Liga Escolar SP', status: 'em-andamento' as const, phase: 'Fase de grupos', categories: 'Sub-13 a Sub-17', teams: 12, note: 'Até 18 de dezembro' },
+  { id: 'copa-base-paulista', name: 'Copa Base Paulista', status: 'inscricoes' as const, phase: 'Inscrições abertas', categories: 'Sub-15 e Sub-17', teams: 8, note: 'Inscrições até 5 de novembro' },
+  { id: 'circuito-metropolitano', name: 'Circuito Metropolitano', status: 'finalizado' as const, phase: 'Encerrado', categories: 'Sub-17 Feminino', teams: 16, note: 'Campeã: Quadra Viva' },
+]
+
+/** Jogos de hoje e dos próximos dias. O placar ao vivo virá do estatístico (etapa 8). */
+export const upcomingMatches = [
+  { id: 'm-110', date: '2025-10-29', time: '16:30', homeTeamId: 'qv-sub17-f', awayTeamId: 'sa-sub17-f', competitionId: 'liga-escolar-sp', venue: 'Ginásio Central · Quadra 1', live: { homeScore: 42, awayScore: 38, period: '3º período · 04:32' } },
+  { id: 'm-203', date: '2025-10-31', time: '18:00', homeTeamId: 'qv-sub15-m', awayTeamId: 'vb-sub15-m', competitionId: 'liga-escolar-sp', venue: 'Quadra Norte', live: null },
+  { id: 'm-111', date: '2025-11-02', time: '10:00', homeTeamId: 'qv-sub17-f', awayTeamId: 'fc-sub17-f', competitionId: 'liga-escolar-sp', venue: 'Ginásio Central · Quadra 1', live: null },
+]
