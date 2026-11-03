@@ -27,3 +27,18 @@ export function canEditAthlete(user: DemoUser | null, athlete: AthleteRef): bool
 export function canEditTeam(user: DemoUser | null, teamId: string): boolean {
   return !!user && roleCan(user.role, 'team.manage') && coachesTeam(user, teamId)
 }
+
+/** Horário fixo e exceções de treino: só o técnico da própria equipe. */
+export function canManageTraining(user: DemoUser | null, teamId: string): boolean {
+  return !!user && roleCan(user.role, 'training.manage') && coachesTeam(user, teamId)
+}
+
+/** Amistoso: o técnico agenda quando a equipe dele joga (em casa ou fora). */
+export function canScheduleFriendly(user: DemoUser | null, teamIds: string[]): boolean {
+  return !!user && roleCan(user.role, 'friendly.schedule') && teamIds.some((id) => coachesTeam(user, id))
+}
+
+/** Jogo oficial: só o organizador, nos campeonatos que administra. */
+export function canScheduleOfficial(user: DemoUser | null, competitionId: string): boolean {
+  return !!user && roleCan(user.role, 'match.schedule') && !!user.competitionIds?.includes(competitionId)
+}

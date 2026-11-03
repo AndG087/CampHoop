@@ -249,6 +249,16 @@ a {
   color: var(--on-navy);
 }
 
+/* Botão com cara de link */
+.link-button {
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
 .pill--warn {
   background: #fde3d6;
   color: #a33a14;
