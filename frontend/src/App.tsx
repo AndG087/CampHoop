@@ -4,6 +4,7 @@ import { useSession } from './auth/session'
 import AppShell from './layout/AppShell'
 import AthletePage from './pages/AthletePage'
 import AthletesPage from './pages/AthletesPage'
+import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import PublicHomePage from './pages/PublicHomePage'
@@ -31,7 +32,7 @@ function Home() {
   if (!user) return <PublicHomePage />
   return (
     <AppShell>
-      <PlaceholderPage title="Início" subtitle="Próximos jogos, atividade recente e resumo da temporada." stage={6} issue={10} />
+      <HomePage />
     </AppShell>
   )
 }
