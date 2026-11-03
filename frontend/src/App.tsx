@@ -10,7 +10,7 @@ import CompetitionsPage from './pages/CompetitionsPage'
 import CompetitionPage from './pages/CompetitionPage'
 import LoginPage from './pages/LoginPage'
 import LiveMatchPage from './pages/LiveMatchPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import TacticsPage from './pages/TacticsPage'
 import PublicHomePage from './pages/PublicHomePage'
 import SchedulePage from './pages/SchedulePage'
 import TeamPage from './pages/TeamPage'
@@ -62,7 +62,7 @@ export default function App() {
             path="quadro-tatico"
             element={
               <RequirePermission permission="tactics.use">
-                <PlaceholderPage title="Quadro tático" subtitle="Posicione jogadores e desenhe jogadas." stage={9} issue={13} />
+                <TacticsPage />
               </RequirePermission>
             }
           />

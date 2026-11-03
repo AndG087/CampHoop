@@ -6,6 +6,7 @@
 import { competitions, competitionTeams, trainingSlots as defaultSlots, upcomingMatches, matches, statLines } from './data'
 import type { Competition } from '../types'
 import type { MatchState } from '../liveTypes'
+import type { TacticDraft, TacticalPlay } from '../tacticsTypes'
 import { matchPeriod, projectMatch } from '../matchProjection'
 
 const STORAGE_KEY = 'camphoop.demoData.v1'
@@ -34,6 +35,8 @@ type DemoData = {
   competitions: Competition[]
   registrations: { competitionId: string; teamId: string }[]
   liveMatches: Record<string, MatchState>
+  tacticalPlays: TacticalPlay[]
+  tacticsDrafts: Record<string, TacticDraft>
 }
 
 function defaults(): DemoData {
@@ -44,6 +47,8 @@ function defaults(): DemoData {
     competitions: [],
     registrations: [],
     liveMatches: {},
+    tacticalPlays: [],
+    tacticsDrafts: {},
   }
 }
 
