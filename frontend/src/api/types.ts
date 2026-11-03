@@ -116,3 +116,8 @@ export type TeamProfile = TeamSummary & {
   recentGames: PublicGame[]
   nextGame: PublicGame | null
 }
+
+/** Compromisso na agenda: jogo (público) ou treino (só da equipe). */
+export type ScheduleEvent =
+  | { kind: 'jogo'; id: string; date: string; time: string | null; game: PublicGame }
+  | { kind: 'treino'; id: string; date: string; time: string; team: Team; venue: string }
