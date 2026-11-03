@@ -1,0 +1,298 @@
+.schedule-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  margin-bottom: 14px;
+}
+
+.schedule-tabs {
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+
+.month {
+  padding: 18px;
+}
+
+.month__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.month__head b {
+  font-size: 15px;
+}
+
+.month__state {
+  margin: 20px 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Calendário mensal: 7 colunas, segunda a domingo */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar__head {
+  padding-bottom: 4px;
+  text-align: center;
+  font: 500 9px var(--font-mono);
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  min-height: 86px;
+  padding: 7px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: #fbf8f2;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.day:hover {
+  border-color: #efbd83;
+}
+
+.day--empty {
+  border: 0;
+  background: none;
+}
+
+.day__num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.day--today .day__num {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.day--selected {
+  border-color: var(--accent);
+  background: #fff6eb;
+}
+
+.day__event {
+  overflow: hidden;
+  padding: 3px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.day__event--jogo {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.day__event--live {
+  background: #fde3d6;
+  color: var(--live);
+  font-weight: 700;
+}
+
+.day__event--treino {
+  background: #e3e9f2;
+  color: #445a7c;
+}
+
+.day__more {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.day-detail {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.day-detail__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.day-detail > p {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+/* Compromisso: horário à esquerda, descrição, placar à direita */
+.event {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12px;
+}
+
+.event:last-child {
+  border-bottom: 0;
+}
+
+.event__time {
+  width: 42px;
+  flex: none;
+  font: 500 12px var(--font-mono);
+  color: var(--ink);
+}
+
+.event__body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.event__body a:hover {
+  text-decoration: underline;
+}
+
+.event__tag {
+  font: 500 9px var(--font-mono);
+  letter-spacing: 0.8px;
+  color: var(--accent-text);
+}
+
+.event--treino .event__tag {
+  color: #445a7c;
+}
+
+.event--live .event__tag {
+  color: var(--live);
+}
+
+.event__cat {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.event__body .muted {
+  font-size: 11px;
+}
+
+.event__score {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-list__day + .schedule-list__day {
+  margin-top: 8px;
+}
+
+.schedule-list__day h3 {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.next-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.next-item:last-child {
+  border-bottom: 0;
+}
+
+.next-item .event {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+
+.next-item__day {
+  width: 92px;
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .month {
+    padding: 12px 10px;
+  }
+
+  .calendar {
+    gap: 2px;
+  }
+
+  /* No celular, cada compromisso vira um ponto colorido; o detalhe aparece abaixo. */
+  .day {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 7px);
+    align-content: start;
+    gap: 3px;
+    min-height: 54px;
+    padding: 4px;
+  }
+
+  .day__num {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .day__event {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+  }
+
+  .day__event--jogo {
+    background: var(--accent);
+  }
+
+  .day__event--live {
+    background: var(--live);
+  }
+
+  .day__event--treino {
+    background: #6f86ab;
+  }
+
+  .day__more {
+    font-size: 8px;
+    line-height: 7px;
+  }
+
+  .next-item {
+    display: block;
+    padding-top: 10px;
+  }
+
+  .next-item .event {
+    padding-top: 4px;
+  }
+}

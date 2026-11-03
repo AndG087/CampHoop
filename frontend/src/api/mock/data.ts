@@ -132,3 +132,17 @@ export const competitionTeams: Record<string, string[]> = {
   'copa-base-paulista': ['qv-sub17-f', 'qv-sub15-m', 'sa-sub17-f', 'vb-sub15-m'],
   'circuito-metropolitano': ['qv-sub17-f', 'sa-sub17-f', 'vb-sub17-f', 'fc-sub17-f'],
 }
+
+/** Treinos semanais de cada equipe (0 = domingo). Treino é interno: só a equipe vê. */
+export const trainingSlots = [
+  { teamId: 'qv-sub17-f', weekday: 1, time: '17:00', venue: 'Ginásio Central · Quadra 2' },
+  { teamId: 'qv-sub17-f', weekday: 3, time: '17:00', venue: 'Ginásio Central · Quadra 2' },
+  { teamId: 'qv-sub15-m', weekday: 2, time: '18:30', venue: 'Quadra Norte' },
+  { teamId: 'qv-sub15-m', weekday: 4, time: '18:30', venue: 'Quadra Norte' },
+  { teamId: 'qv-sub13-x', weekday: 6, time: '09:00', venue: 'Centro de Treinamento' },
+  { teamId: 'sa-sub17-f', weekday: 2, time: '16:00', venue: 'Clube São Atlas' },
+  { teamId: 'vb-sub17-f', weekday: 1, time: '18:00', venue: 'Arena Vale' },
+  { teamId: 'vb-sub15-m', weekday: 3, time: '18:00', venue: 'Arena Vale' },
+  { teamId: 'fc-sub17-f', weekday: 4, time: '17:30', venue: 'Ginásio Fênix' },
+  { teamId: 'fc-sub13-x', weekday: 6, time: '10:00', venue: 'Ginásio Fênix' },
+]

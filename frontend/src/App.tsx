@@ -7,6 +7,7 @@ import AthletesPage from './pages/AthletesPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import PublicHomePage from './pages/PublicHomePage'
+import SchedulePage from './pages/SchedulePage'
 import TeamPage from './pages/TeamPage'
 import TeamsPage from './pages/TeamsPage'
 
@@ -44,7 +45,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="times" element={<TeamsPage />} />
           <Route path="times/:teamId" element={<TeamPage />} />
-          <Route path="agenda" element={<PlaceholderPage title="Agenda" subtitle="Calendário de jogos e treinos das equipes." stage={5} issue={9} action={{ label: '+ Agendar jogo', permission: 'schedule.manage' }} />} />
+          <Route path="agenda" element={<SchedulePage />} />
           <Route path="campeonatos" element={<PlaceholderPage title="Campeonatos" subtitle="Inscrições, classificação e tabela de jogos." stage={7} issue={11} />} />
           <Route path="atletas" element={<AthletesPage />} />
           <Route path="atletas/:athleteId" element={<AthletePage />} />
