@@ -3,7 +3,8 @@
  * Depois viram GET /public/competitions e GET /public/games no backend.
  */
 import { delay, teamById } from './athletes'
-import { competitions, matches, upcomingMatches } from './mock/data'
+import { competitions, matches } from './mock/data'
+import { allUpcomingMatches, type UpcomingMatch } from './mock/store'
 import type { Competition, PublicGame } from './types'
 
 export async function listCompetitions(): Promise<Competition[]> {
@@ -18,7 +19,7 @@ export type PublicGames = {
 }
 
 /** Jogo agendado ou em andamento, no formato público. */
-export function scheduledGame(m: (typeof upcomingMatches)[number]): PublicGame {
+export function scheduledGame(m: UpcomingMatch): PublicGame {
   return {
     id: m.id,
     date: m.date,
@@ -30,7 +31,7 @@ export function scheduledGame(m: (typeof upcomingMatches)[number]): PublicGame {
     awayScore: m.live?.awayScore ?? null,
     period: m.live?.period ?? null,
     venue: m.venue,
-    competition: competitions.find((c) => c.id === m.competitionId)?.name ?? null,
+    competition: m.competitionId ? (competitions.find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
   }
 }
 
@@ -53,7 +54,9 @@ export function finishedGame(m: (typeof matches)[number]): PublicGame {
 
 export async function listPublicGames(): Promise<PublicGames> {
   await delay()
-  const scheduled = upcomingMatches.map(scheduledGame)
+  const scheduled = allUpcomingMatches()
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+    .map(scheduledGame)
   return {
     live: scheduled.filter((g) => g.status === 'ao-vivo'),
     upcoming: scheduled.filter((g) => g.status === 'agendado'),

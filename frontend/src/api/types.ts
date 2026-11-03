@@ -120,4 +120,16 @@ export type TeamProfile = TeamSummary & {
 /** Compromisso na agenda: jogo (público) ou treino (só da equipe). */
 export type ScheduleEvent =
   | { kind: 'jogo'; id: string; date: string; time: string | null; game: PublicGame }
-  | { kind: 'treino'; id: string; date: string; time: string; team: Team; venue: string }
+  | {
+      kind: 'treino'
+      id: string
+      date: string
+      time: string
+      team: Team
+      venue: string
+      /** Treino do horário fixo (`slotId`) ou avulso (`null`). */
+      slotId: string | null
+      cancelled: boolean
+      /** Ex.: "Remarcado de seg, 3 nov". */
+      note: string | null
+    }

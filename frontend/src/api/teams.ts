@@ -4,7 +4,8 @@
  * alimentam o perfil dos atletas, para os números baterem entre as telas.
  */
 import { delay, round1, teamById, toSummary } from './athletes'
-import { athletes, competitionTeams, competitions, matches, teams, upcomingMatches } from './mock/data'
+import { athletes, competitionTeams, competitions, matches, teams } from './mock/data'
+import { allUpcomingMatches } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { TeamProfile, TeamSummary } from './types'
 
@@ -50,9 +51,9 @@ export async function getTeam(id: string): Promise<TeamProfile | null> {
   const played = teamMatches(id)
   const scores = played.map((m) => scoreFor(m, id))
   const avg = (key: 'scored' | 'allowed') => (scores.length ? round1(scores.reduce((sum, s) => sum + s[key], 0) / scores.length) : 0)
-  const next = upcomingMatches
+  const next = allUpcomingMatches()
     .filter((m) => m.homeTeamId === id || m.awayTeamId === id)
-    .sort((a, b) => a.date.localeCompare(b.date))[0]
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]
 
   return {
     ...summary,
