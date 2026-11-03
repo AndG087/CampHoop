@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { CompetitionError, createCompetition, DIVISIONS, divisionKey, divisionLabel, enrollTeams } from '../api/competitions'
+import { createCompetition, DIVISIONS, divisionKey, divisionLabel, enrollTeams } from '../api/competitions'
 import { listTeams } from '../api/athletes'
 import type { CompetitionProfile } from '../api/types'
 import { useApi } from '../api/useApi'
@@ -18,7 +18,7 @@ export function CreateCompetitionDialog({ user, onClose, onCreated }: { user: De
     try {
       const id = await createCompetition(user, { name, divisions: DIVISIONS.filter((d) => selected.includes(divisionKey(d))) })
       onCreated(id)
-    } catch (e) { setError(e instanceof CompetitionError ? e.message : 'Não foi possível criar o campeonato. Tente novamente.') }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível criar o campeonato. Tente novamente.') }
     finally { setBusy(false) }
   }
   return (
@@ -30,7 +30,7 @@ export function CreateCompetitionDialog({ user, onClose, onCreated }: { user: De
           const key = divisionKey(d)
           return <label key={key}><input type="checkbox" checked={selected.includes(key)} onChange={(e) => setSelected((s) => e.target.checked ? [...s, key] : s.filter((k) => k !== key))} /><span>{divisionLabel(d)}</span></label>
         })}</fieldset>
-        <p className="form__hint">O campeonato começa com inscrições abertas. As alterações são salvas neste navegador.</p>
+        <p className="form__hint">O campeonato começa com inscrições abertas. As alterações são salvas no banco de dados.</p>
         {error && <p className="form__error" role="alert">{error}</p>}
         <div className="form__actions"><button type="button" className="btn btn--ghost" onClick={onClose}>Cancelar</button><button type="submit" className="btn btn--accent" disabled={busy}>{busy ? 'Criando…' : 'Criar campeonato'}</button></div>
       </form>
@@ -49,7 +49,7 @@ export function EnrollTeamsDialog({ user, competition, onClose, onChanged }: { u
     setBusy(true)
     setError('')
     try { await enrollTeams(user, competition.id, selected); onChanged(); onClose() }
-    catch (e) { setError(e instanceof CompetitionError ? e.message : 'Não foi possível inscrever as equipes. Tente novamente.') }
+    catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível inscrever as equipes. Tente novamente.') }
     finally { setBusy(false) }
   }
   return (

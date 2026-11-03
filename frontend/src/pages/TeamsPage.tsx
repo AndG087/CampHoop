@@ -1,3 +1,6 @@
+import { DATA_SEASON } from '../api/client'
+import { useState } from 'react'
+import LoadMore from '../components/LoadMore'
 import { Link, useSearchParams } from 'react-router'
 import { listCompetitions } from '../api/public'
 import { listTeamSummaries } from '../api/teams'
@@ -9,7 +12,7 @@ import './TeamsPage.css'
 
 const GENDERS: Gender[] = ['Feminino', 'Masculino', 'Misto']
 /** Ordem das seções: da categoria mais velha para a mais nova. */
-const CATEGORIES: Category[] = ['Sub-17', 'Sub-15', 'Sub-13']
+const CATEGORIES: Category[] = ['Universitário', 'Sub-17', 'Sub-15', 'Sub-13']
 
 function TeamCard({ summary, mine }: { summary: TeamSummary; mine: boolean }) {
   const { team } = summary
@@ -36,6 +39,7 @@ function TeamCard({ summary, mine }: { summary: TeamSummary; mine: boolean }) {
 }
 
 export default function TeamsPage() {
+  const [shown, setShown] = useState(48)
   const { user } = useSession()
   const [params, setParams] = useSearchParams()
   const competitionId = params.get('campeonato') ?? ''
@@ -70,12 +74,12 @@ export default function TeamsPage() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>Times</h1>
           <p>Equipes por campeonato e categoria, com elenco e desempenho.</p>
         </div>
         <Can permission="team.manage">
-          <button type="button" className="btn btn--accent" title="Cadastro de equipes chega com o backend.">
+          <button type="button" className="btn btn--accent" disabled title="Cadastro manual ainda não disponível.">
             + Criar equipe
           </button>
         </Can>
@@ -127,10 +131,11 @@ export default function TeamsPage() {
             <span>{section.teams.length} {section.teams.length === 1 ? 'equipe' : 'equipes'}</span>
           </h2>
           <div className="team-grid">
-            {section.teams.map((s) => (
+            {section.teams.slice(0, shown).map((s) => (
               <TeamCard key={s.team.id} summary={s} mine={s.team.id === user?.teamId} />
             ))}
           </div>
+          <LoadMore shown={shown} total={section.teams.length} onMore={() => setShown((n) => n + 48)} />
         </section>
       ))}
     </>

@@ -29,14 +29,16 @@ export function formatGameDay(iso: string, today: string): string {
 }
 
 /** "2024-03" → "Março de 2024" */
-export function formatMonthYear(ym: string): string {
+export function formatMonthYear(ym: string | null): string {
+  if (!ym) return 'Não informado'
   const [y, m] = ym.split('-').map(Number)
   const month = MONTHS_LONG[m - 1]
   return `${month[0].toUpperCase()}${month.slice(1)} de ${y}`
 }
 
 /** 168 → "1,68 m" */
-export function formatHeight(cm: number): string {
+export function formatHeight(cm: number | null): string {
+  if (cm === null) return 'Não informada'
   return `${(cm / 100).toFixed(2).replace('.', ',')} m`
 }
 
@@ -46,6 +48,8 @@ export function formatAverage(n: number): string {
 }
 
 export const STATUS_LABEL: Record<AthleteStatus, string> = {
+  registrado: 'CADASTRO DA FONTE',
+  historico: 'BASE HISTÓRICA',
   ativo: 'EM ATIVIDADE',
   lesionado: 'LESÃO',
   afastado: 'AFASTAMENTO',

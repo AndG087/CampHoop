@@ -1,6 +1,9 @@
+import { calendarFocusDate } from '../api/client'
+import { remoteApi } from '../api/client'
+import { DATA_SEASON } from '../api/client'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import { resetDemoData } from '../api/mock/store'
 import { listSchedule } from '../api/schedule'
 import type { ScheduleEvent } from '../api/types'
@@ -75,7 +78,7 @@ function EventItem({ event, onEdit }: { event: ScheduleEvent; onEdit?: (e: Train
     )
   }
   const g = event.game
-  const tag = g.status === 'ao-vivo' ? 'AO VIVO' : g.status === 'encerrado' ? 'ENCERRADO' : 'JOGO'
+  const tag = g.status === 'ao-vivo' ? 'AO VIVO' : g.status === 'encerrado' ? 'ENCERRADO' : g.status === 'adiado' ? 'ADIADO' : 'JOGO'
   return (
     <article className={`event event--jogo${g.status === 'ao-vivo' ? ' event--live' : ''}`}>
       <span className="event__time">{g.time ?? '—'}</span>
@@ -100,12 +103,13 @@ function EventItem({ event, onEdit }: { event: ScheduleEvent; onEdit?: (e: Train
 export default function SchedulePage() {
   const { user } = useSession()
   const [params, setParams] = useSearchParams()
-  const month = params.get('mes') ?? DEMO_TODAY.slice(0, 7)
+  const focusDate = calendarFocusDate()
+  const month = params.get('mes') ?? focusDate.slice(0, 7)
   const view = params.get('ver') === 'lista' ? 'lista' : 'calendario'
   const type = params.get('tipo') ?? ''
   const mine = params.get('equipe') === 'minha'
   const lastDay = daysInMonth(month)
-  const selectedDay = params.get('dia') ?? (DEMO_TODAY.startsWith(month) ? DEMO_TODAY : `${month}-01`)
+  const selectedDay = params.get('dia') ?? (focusDate.startsWith(month) ? focusDate : `${month}-01`)
 
   // Muda a cada alteração para recarregar a agenda.
   const [version, setVersion] = useState(0)
@@ -143,7 +147,7 @@ export default function SchedulePage() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>Agenda</h1>
           <p>{user?.teamId ? 'Jogos de todas as equipes e os treinos da sua.' : 'Jogos de todas as equipes.'}</p>
         </div>
@@ -261,7 +265,7 @@ export default function SchedulePage() {
         ))}
       </div>
 
-      {(canTrain || user?.role === 'organizador') && (
+      {!remoteApi && (canTrain || user?.role === 'organizador') && (
         <p className="demo-reset muted">
           As alterações ficam salvas só neste navegador (demonstração).{' '}
           <button

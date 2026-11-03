@@ -1,3 +1,4 @@
+import { remoteApi, request, DATA_SEASON } from './client'
 import { coachesTeam } from '../auth/access'
 import { roleCan, type DemoUser } from '../auth/roles'
 import { delay, teamById, toSummary } from './athletes'
@@ -10,6 +11,7 @@ function requireCoach(viewer: DemoUser | null, teamId: string) {
   if (!viewer || !roleCan(viewer.role, 'tactics.use') || !coachesTeam(viewer, teamId)) throw new TacticsError('Só o técnico da equipe pode acessar suas jogadas.')
 }
 const draftKey = (viewer: DemoUser, teamId: string) => `${viewer.id}:${teamId}`
+const draftWrites = new Map<string, Promise<unknown>>()
 const validPoint = (p: CourtPoint) => p && Number.isFinite(p.x) && Number.isFinite(p.y) && p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100
 
 function validateBoard(board: TacticalBoard, teamId: string) {
@@ -29,6 +31,8 @@ function validateDraft(draft: TacticDraft, teamId: string, saving = false) {
 }
 
 export async function getTacticsWorkspace(viewer: DemoUser | null, teamId: string) {
+  if (remoteApi) return request(`/tactics/${teamId}`)
+
   await delay()
   requireCoach(viewer, teamId)
   const roster = athletes.filter((a) => a.teamId === teamId).map(toSummary)
@@ -43,12 +47,22 @@ export type TacticsWorkspace = Awaited<ReturnType<typeof getTacticsWorkspace>>
 
 /** Rascunho privado por técnico e equipe, preservado também ao sair da página. */
 export function saveTacticsDraft(viewer: DemoUser | null, teamId: string, draft: TacticDraft) {
+  if (remoteApi) {
+    const value = structuredClone(draft)
+    const season = DATA_SEASON
+    const key = `${teamId}:${season}`
+    const pending = (draftWrites.get(key) ?? Promise.resolve()).catch(() => {}).then(() => request(`/tactics/${teamId}/draft?season=${season}`, 'PUT', value))
+    draftWrites.set(key, pending)
+    return pending
+  }
   requireCoach(viewer, teamId)
   validateDraft(draft, teamId)
   changeDemoData((d) => { d.tacticsDrafts[draftKey(viewer!, teamId)] = structuredClone(draft) })
 }
 
 export async function saveTacticalPlay(viewer: DemoUser | null, teamId: string, draft: TacticDraft): Promise<TacticalPlay> {
+  if (remoteApi) { const season = DATA_SEASON; await draftWrites.get(`${teamId}:${season}`)?.catch(() => {}); return request(`/tactics/${teamId}/plays?season=${season}`, 'POST', draft) }
+
   await delay()
   requireCoach(viewer, teamId)
   validateDraft(draft, teamId, true)
@@ -68,6 +82,8 @@ export async function saveTacticalPlay(viewer: DemoUser | null, teamId: string, 
 }
 
 export async function deleteTacticalPlay(viewer: DemoUser | null, teamId: string, id: string, revision: number) {
+  if (remoteApi) { const season = DATA_SEASON; await draftWrites.get(`${teamId}:${season}`)?.catch(() => {}); return request(`/tactics/${teamId}/plays/${id}?revision=${revision}&season=${season}`, 'DELETE') }
+
   await delay()
   requireCoach(viewer, teamId)
   const play = demoData().tacticalPlays.find((p) => p.id === id && p.teamId === teamId)

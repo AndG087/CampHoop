@@ -1,0 +1,7 @@
+import { remoteApi, DATA_SEASON, SEASON_OPTIONS } from '../api/client'
+
+export default function DataSource() {
+  if (!remoteApi) return null
+  const info = SEASON_OPTIONS.find((s) => s.season === DATA_SEASON)
+  return <p className="data-source">NCAA {DATA_SEASON} · {DATA_SEASON === '2024/25' ? 'Torneios nacionais históricos, masculino e feminino.' : 'Calendário e box scores publicados, masculino e feminino. Cobertura parcial; inclui adversários de outras divisões.'} {info && <span>{info.counts.completed ?? info.counts.games} jogos encerrados · {info.counts.scheduled ?? 0} agendados · Importado em {new Date(info.importedAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}. </span>}Dados: <a href="https://github.com/sportsdataverse/sportsdataverse-data" target="_blank" rel="noreferrer">SportsDataverse / ESPN</a>. Recorte e cálculos adaptados pelo CampHoop. Créditos CC BY 4.0: <a href="https://github.com/sportsdataverse/hoopR-mbb-data/blob/main/LICENSE.md" target="_blank" rel="noreferrer">hoopR</a> e <a href="https://github.com/sportsdataverse/wehoop-wbb-data/blob/main/LICENSE.md" target="_blank" rel="noreferrer">wehoop</a>. Horários de Brasília. Dados importados em lote; não é transmissão ao vivo da NCAA. Sem vínculo oficial com a NCAA.</p>
+}

@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /**
  * Agenda: jogos e treinos num intervalo de datas, e as ações de agendamento.
  * Depois vira GET /schedule e os POST/DELETE de treinos e jogos.
@@ -44,6 +45,8 @@ function teamHasGame(teamId: string, date: string): boolean {
 }
 
 export async function listSchedule(from: string, to: string, viewer: DemoUser | null): Promise<ScheduleEvent[]> {
+  if (remoteApi) return request(`/schedule?start=${from}&end=${to}`)
+
   await delay()
   const inRange = (date: string) => date >= from && date <= to
 
@@ -83,6 +86,8 @@ function requireTraining(viewer: DemoUser | null, teamId: string) {
 }
 
 export async function listTrainingSlots(teamId: string) {
+  if (remoteApi) return request(`/training/slots?teamId=${encodeURIComponent(teamId)}`)
+
   await delay()
   return demoData()
     .slots.filter((s) => s.teamId === teamId)
@@ -90,6 +95,8 @@ export async function listTrainingSlots(teamId: string) {
 }
 
 export async function addTrainingSlot(viewer: DemoUser | null, slot: { teamId: string; weekday: number; time: string; venue: string }) {
+  if (remoteApi) return request('/training/slots', 'POST', slot)
+
   await delay()
   requireTraining(viewer, slot.teamId)
   const clash = demoData().slots.some((s) => s.teamId === slot.teamId && s.weekday === slot.weekday && s.time === slot.time)
@@ -98,6 +105,8 @@ export async function addTrainingSlot(viewer: DemoUser | null, slot: { teamId: s
 }
 
 export async function removeTrainingSlot(viewer: DemoUser | null, slotId: string) {
+  if (remoteApi) return request(`/training/slots/${slotId}`, 'DELETE')
+
   await delay()
   const slot = demoData().slots.find((s) => s.id === slotId)
   if (!slot) return
@@ -109,6 +118,8 @@ export async function removeTrainingSlot(viewer: DemoUser | null, slotId: string
 }
 
 export async function cancelTraining(viewer: DemoUser | null, teamId: string, slotId: string, date: string) {
+  if (remoteApi) return request('/training/cancel', 'POST', { teamId, slotId, date })
+
   await delay()
   requireTraining(viewer, teamId)
   changeDemoData((d) => d.changes.push({ id: newId('cancel'), kind: 'cancelado', teamId, slotId, date }))
@@ -116,6 +127,8 @@ export async function cancelTraining(viewer: DemoUser | null, teamId: string, sl
 
 /** Desfaz o cancelamento de um treino do horário fixo. */
 export async function restoreTraining(viewer: DemoUser | null, teamId: string, slotId: string, date: string) {
+  if (remoteApi) return request('/training/restore', 'POST', { teamId, slotId, date })
+
   await delay()
   requireTraining(viewer, teamId)
   changeDemoData((d) => {
@@ -124,6 +137,8 @@ export async function restoreTraining(viewer: DemoUser | null, teamId: string, s
 }
 
 export async function addExtraTraining(viewer: DemoUser | null, input: { teamId: string; date: string; time: string; venue: string; note?: string }) {
+  if (remoteApi) return request('/training/extra', 'POST', input)
+
   await delay()
   requireTraining(viewer, input.teamId)
   if (teamHasGame(input.teamId, input.date)) throw new ScheduleError('A equipe tem jogo nesse dia. Escolha outra data.')
@@ -131,6 +146,8 @@ export async function addExtraTraining(viewer: DemoUser | null, input: { teamId:
 }
 
 export async function removeExtraTraining(viewer: DemoUser | null, teamId: string, id: string) {
+  if (remoteApi) return request(`/training/extra/${id}`, 'DELETE')
+
   await delay()
   requireTraining(viewer, teamId)
   changeDemoData((d) => {
@@ -143,6 +160,8 @@ export async function rescheduleTraining(
   viewer: DemoUser | null,
   input: { teamId: string; slotId: string; fromDate: string; date: string; time: string; venue: string },
 ) {
+  if (remoteApi) return request('/training/reschedule', 'POST', input)
+
   await addExtraTraining(viewer, { teamId: input.teamId, date: input.date, time: input.time, venue: input.venue, note: `Remarcado de ${shortLabel(input.fromDate)}` })
   await cancelTraining(viewer, input.teamId, input.slotId, input.fromDate)
 }
@@ -158,6 +177,8 @@ export type NewGame = {
 }
 
 export async function scheduleGame(viewer: DemoUser | null, game: NewGame) {
+  if (remoteApi) return request('/games', 'POST', game)
+
   await delay()
   const teams = [game.homeTeamId, game.awayTeamId]
   if (game.competitionId) {

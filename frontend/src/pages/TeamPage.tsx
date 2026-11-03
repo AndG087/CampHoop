@@ -1,5 +1,6 @@
+import { DATA_SEASON } from '../api/client'
 import { Link, useParams } from 'react-router'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import { getTeam } from '../api/teams'
 import type { PublicGame } from '../api/types'
 import { useApi } from '../api/useApi'
@@ -59,12 +60,12 @@ export default function TeamPage() {
       <Link to="/times" className="back-link">← Times</Link>
       <div className="page-head">
         <div>
-          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · TEMPORADA 2025/26</div>
+          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · BASE NCAA {DATA_SEASON}</div>
           <h1>{team.team.name}</h1>
           <p>{club.name} · {club.city}</p>
         </div>
         {canEditTeam(user, team.team.id) && (
-          <button type="button" className="btn btn--ghost" title="Edição chega com o backend.">
+          <button type="button" className="btn btn--ghost" disabled title="Edição manual ainda não disponível.">
             Editar equipe
           </button>
         )}
@@ -132,7 +133,7 @@ export default function TeamPage() {
                       <Avatar name={a.name} photoUrl={a.photoUrl} />
                       <span className="roster__name">
                         <b>{a.name}</b>
-                        <small>#{a.number} · {a.position}</small>
+                        <small>#{a.number ?? '—'} · {a.position}</small>
                       </span>
                       <span className="roster__ppg">{a.games ? `${formatAverage(a.pointsPerGame)} PTS/J` : '–'}</span>
                     </Link>

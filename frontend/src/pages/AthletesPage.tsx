@@ -1,3 +1,6 @@
+import { DATA_SEASON } from '../api/client'
+import { useState } from 'react'
+import LoadMore from '../components/LoadMore'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { listAthletes, listTeams } from '../api/athletes'
 import type { AthleteSummary, Category } from '../api/types'
@@ -9,7 +12,7 @@ import Avatar from '../components/Avatar'
 import { STATUS_LABEL, formatAverage } from '../format'
 import './AthletesPage.css'
 
-const CATEGORIES: Category[] = ['Sub-13', 'Sub-15', 'Sub-17']
+const CATEGORIES: Category[] = ['Universitário', 'Sub-13', 'Sub-15', 'Sub-17']
 
 /** Busca sem diferenciar maiúsculas nem acentos: "julia" encontra "Júlia". */
 function normalize(text: string): string {
@@ -17,6 +20,7 @@ function normalize(text: string): string {
 }
 
 export default function AthletesPage() {
+  const [shown, setShown] = useState(50)
   const { user } = useSession()
   const navigate = useNavigate()
   // Filtros ficam no endereço: voltar do perfil mantém a busca.
@@ -51,12 +55,12 @@ export default function AthletesPage() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>Atletas</h1>
           <p>Elenco, desenvolvimento e desempenho individual.</p>
         </div>
         <Can permission="athlete.manage">
-          <button type="button" className="btn btn--accent" title="Cadastro de atletas chega com o backend.">
+          <button type="button" className="btn btn--accent" disabled title="Cadastro manual ainda não disponível.">
             + Adicionar atleta
           </button>
         </Can>
@@ -135,7 +139,7 @@ export default function AthletesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visible.map((a) => (
+                    {visible.slice(0, shown).map((a) => (
                       <tr key={a.id} className="athlete-row" onClick={() => navigate(`/atletas/${a.id}`)}>
                         <td>
                           <span className="athlete-cell">
@@ -151,8 +155,8 @@ export default function AthletesPage() {
                           <small className="club-name">{a.team.club.name}</small>
                         </td>
                         <td className="nowrap hide-sm">{a.position}</td>
-                        <td className="num hide-sm">{a.number}</td>
-                        <td className="num">{a.age}</td>
+                        <td className="num hide-sm">{a.number ?? '—'}</td>
+                        <td className="num">{a.age ?? '—'}</td>
                         <td className="num hide-sm">{a.games}</td>
                         <td className="num">
                           <b>{a.games ? formatAverage(a.pointsPerGame) : '–'}</b>
@@ -171,6 +175,7 @@ export default function AthletesPage() {
           </>
         )}
       </div>
+      <LoadMore shown={shown} total={visible.length} onMore={() => setShown((n) => n + 50)} />
     </>
   )
 }

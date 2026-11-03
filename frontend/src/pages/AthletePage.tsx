@@ -1,3 +1,4 @@
+import { DATA_SEASON } from '../api/client'
 import { Link, useParams } from 'react-router'
 import { getAthlete } from '../api/athletes'
 import { useApi } from '../api/useApi'
@@ -48,11 +49,11 @@ export default function AthletePage() {
           <div className="eyebrow">{own ? 'SEU PERFIL' : 'PERFIL DE ATLETA'}</div>
           <h1>{athlete.name}</h1>
           <p>
-            {athlete.team.club.name} · {athlete.team.name} · #{athlete.number}
+            {athlete.team.club.name} · {athlete.team.name} · #{athlete.number ?? '—'}
           </p>
         </div>
         {canEditAthlete(user, ref) && (
-          <button type="button" className="btn btn--ghost" title="Edição chega com o backend.">
+          <button type="button" className="btn btn--ghost" disabled title="Edição manual ainda não disponível.">
             Editar perfil
           </button>
         )}
@@ -62,10 +63,10 @@ export default function AthletePage() {
         <aside className="card athlete-card">
           <Avatar name={athlete.name} photoUrl={athlete.photoUrl} size="lg" />
           <h2>{athlete.name}</h2>
-          <p className="muted">{athlete.position} · #{athlete.number}</p>
+          <p className="muted">{athlete.position} · #{athlete.number ?? '—'}</p>
           <span className={`pill${statusClass}`}>{STATUS_LABEL[athlete.status]}</span>
           <dl className="facts">
-            <div><dt>Idade</dt><dd>{athlete.age} anos</dd></div>
+            <div><dt>Idade</dt><dd>{athlete.age === null ? 'Não informada' : `${athlete.age} anos`}</dd></div>
             <div><dt>Altura</dt><dd>{formatHeight(athlete.heightCm)}</dd></div>
             <div><dt>Equipe</dt><dd><Link to={`/times/${athlete.team.id}`} className="facts__link">{athlete.team.name}</Link></dd></div>
             <div><dt>Clube</dt><dd>{athlete.team.club.name}</dd></div>
@@ -92,7 +93,7 @@ export default function AthletePage() {
             </div>
           </div>
           <p className="stat-foot muted">
-            Médias de {athlete.games} {athlete.games === 1 ? 'jogo' : 'jogos'} na temporada 2025/26.
+            Médias de {athlete.games} {athlete.games === 1 ? 'jogo' : 'jogos'} nos jogos registrados. NCAA {athlete.season ?? DATA_SEASON}.
           </p>
 
           <h2 className="section-title">Desempenho recente</h2>

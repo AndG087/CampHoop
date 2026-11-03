@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 import { roleCan, type DemoUser } from '../auth/roles'
 import { delay } from './athletes'
 import { ACTION_LABEL, clockSeconds, periodLength, type LiveMatch, type MatchAction, type MatchProjection, type MatchState } from './liveTypes'
@@ -9,11 +10,15 @@ import type { PublicGame } from './types'
 export class MatchError extends Error {}
 
 export async function listMatches(): Promise<PublicGame[]> {
+  if (remoteApi) return request('/games')
+
   const games = await listPublicGames()
   return [...games.live, ...games.upcoming, ...allFinishedMatches().sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)).map(finishedGame)]
 }
 
 export async function getMatch(id: string): Promise<LiveMatch | null> {
+  if (remoteApi) return request(`/matches/${encodeURIComponent(id)}`)
+
   await delay()
   const original = allScheduledMatches().find((m) => m.id === id)
   if (original) {
@@ -50,6 +55,8 @@ async function mutate(viewer: DemoUser | null, id: string, revision: number, fn:
 }
 
 export async function startMatch(viewer: DemoUser | null, id: string, revision: number) {
+  if (remoteApi) return request(`/matches/${id}/start`, 'POST', { revision })
+
   return mutate(viewer, id, revision, (state, _match, projection) => {
     if (state.status !== 'agendado') throw new MatchError('Esta partida já foi iniciada.')
     if (!projection.box.some((a) => a.teamId === _match.homeTeamId && a.onCourt) || !projection.box.some((a) => a.teamId === _match.awayTeamId && a.onCourt)) throw new MatchError('As duas equipes precisam de atletas disponíveis no elenco.')
@@ -59,6 +66,8 @@ export async function startMatch(viewer: DemoUser | null, id: string, revision: 
 
 export type ClockCommand = { type: 'play' | 'pause' | 'next-period' | 'finish' } | { type: 'set'; seconds: number }
 export async function controlMatch(viewer: DemoUser | null, id: string, revision: number, command: ClockCommand) {
+  if (remoteApi) return request(`/matches/${id}/control`, 'POST', { revision, command })
+
   return mutate(viewer, id, revision, (state, _match, projection) => {
     if (state.status !== 'ao-vivo') throw new MatchError('Inicie a partida antes de operar o relógio.')
     const now = Date.now()
@@ -93,6 +102,8 @@ export async function controlMatch(viewer: DemoUser | null, id: string, revision
 }
 
 export async function recordMatchAction(viewer: DemoUser | null, id: string, revision: number, input: { action: MatchAction; teamId: string; athleteId: string; outAthleteId?: string | null }) {
+  if (remoteApi) return request(`/matches/${id}/actions`, 'POST', { revision, input })
+
   return mutate(viewer, id, revision, (state, match, projection) => {
     if (state.status !== 'ao-vivo') throw new MatchError('Inicie a partida para registrar ações.')
     if (!Object.hasOwn(ACTION_LABEL, input.action)) throw new MatchError('Ação desconhecida.')
@@ -112,6 +123,8 @@ export async function recordMatchAction(viewer: DemoUser | null, id: string, rev
 }
 
 export async function undoMatchAction(viewer: DemoUser | null, id: string, revision: number) {
+  if (remoteApi) return request(`/matches/${id}/undo`, 'POST', { revision })
+
   return mutate(viewer, id, revision, (state) => {
     if (state.status !== 'ao-vivo' || !state.events.length) throw new MatchError('Não há ação registrada para desfazer.')
     state.events.pop()

@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /** Resumo do início; depois vira GET /home, preservando o contrato da tela. */
 import type { DemoUser } from '../auth/roles'
 import { round1, teamById } from './athletes'
@@ -10,7 +11,7 @@ import type { Competition, PublicGame, ScheduleEvent, Team, TeamSummary } from '
 
 export type HomeScope = 'minha' | 'todas'
 export type HomeLeader = {
-  id: string; name: string; number: number; position: string; team: Team
+  id: string; name: string; number: number | null; position: string; team: Team
   games: number; points: number; rebounds: number; assists: number
 }
 export type HomePerformance = {
@@ -35,6 +36,8 @@ export type HomeSummary = {
 }
 
 export async function getHomeSummary(viewer: DemoUser, scope: HomeScope, today = DEMO_TODAY): Promise<HomeSummary> {
+  if (remoteApi) return request(`/home?scope=${scope}`)
+
   const [y, m, d] = today.split('-').map(Number)
   const until = new Date(Date.UTC(y, m - 1, d + 30)).toISOString().slice(0, 10)
   const [summaries, schedule] = await Promise.all([listTeamSummaries(), listSchedule(today, until, viewer)])

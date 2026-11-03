@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 import { canManageCompetition } from '../auth/access'
 import { roleCan, type DemoUser } from '../auth/roles'
 import { delay, teamById } from './athletes'
@@ -6,6 +7,8 @@ import { finishedGame, scheduledGame } from './public'
 import type { Competition, CompetitionDivision, CompetitionProfile, PublicGame, Standing, Team } from './types'
 
 export const DIVISIONS: CompetitionDivision[] = [
+  { category: 'Universitário', gender: 'Feminino' },
+  { category: 'Universitário', gender: 'Masculino' },
   { category: 'Sub-17', gender: 'Feminino' },
   { category: 'Sub-15', gender: 'Masculino' },
   { category: 'Sub-13', gender: 'Misto' },
@@ -41,6 +44,8 @@ export function buildStandings(teams: Team[], games: PublicGame[]): Standing[] {
 }
 
 export async function getCompetition(id: string): Promise<CompetitionProfile | null> {
+  if (remoteApi) return request(`/competitions/${encodeURIComponent(id)}`)
+
   await delay()
   const competition = allCompetitions().find((c) => c.id === id)
   if (!competition) return null
@@ -59,6 +64,8 @@ export async function getCompetition(id: string): Promise<CompetitionProfile | n
 }
 
 export async function createCompetition(viewer: DemoUser | null, input: { name: string; divisions: CompetitionDivision[] }): Promise<string> {
+  if (remoteApi) return request('/competitions', 'POST', input)
+
   await delay()
   if (!viewer || !roleCan(viewer.role, 'competition.manage')) throw new CompetitionError('Só o organizador pode criar campeonatos.')
   const name = input.name.trim().replace(/\s+/g, ' ')
@@ -76,6 +83,8 @@ export async function createCompetition(viewer: DemoUser | null, input: { name: 
 }
 
 export async function enrollTeams(viewer: DemoUser | null, competitionId: string, ids: string[]): Promise<void> {
+  if (remoteApi) return request(`/competitions/${competitionId}/enroll`, 'POST', { ids })
+
   await delay()
   const competition = allCompetitions().find((c) => c.id === competitionId)
   if (!competition) throw new CompetitionError('Campeonato não encontrado.')

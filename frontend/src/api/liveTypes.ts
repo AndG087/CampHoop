@@ -11,6 +11,8 @@ export type MatchEvent = {
   seconds: number
 }
 export type MatchState = {
+  regulationPeriods?: number
+  periodSeconds?: number
   matchId: string
   revision: number
   status: PublicGame['status']
@@ -23,7 +25,7 @@ export type BoxLine = {
   athleteId: string
   teamId: string
   name: string
-  number: number
+  number: number | null
   position: string
   eligible: boolean
   played: boolean
@@ -48,6 +50,8 @@ export type MatchProjection = {
   quarters: { home: number; away: number }[]
 }
 export type LiveMatch = MatchProjection & {
+  statsComplete?: boolean
+  sourceUrl?: string | null
   game: PublicGame
   state: MatchState
   historical: boolean
@@ -60,8 +64,8 @@ export const ACTION_LABEL: Record<MatchAction, string> = {
   steal: 'Roubo de bola', block: 'Toco', turnover: 'Erro de ataque', foul: 'Falta pessoal', substitution: 'Substituição',
 }
 export const formatClock = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-export const periodLabel = (period: number) => period <= 4 ? `${period}º período` : `${period - 4}ª prorrogação`
-export const periodLength = (period: number) => period <= 4 ? 600 : 300
+export const periodLabel = (period: number, regulation = 4) => period <= regulation ? `${period}º ${regulation === 2 ? 'tempo' : 'período'}` : `${period - regulation}ª prorrogação`
+export const periodLength = (period: number, regulation = 4, seconds = 600) => period <= regulation ? seconds : 300
 export function clockSeconds(state: MatchState, now = Date.now()) {
   return Math.max(0, state.remainingSeconds - (state.runningSince === null ? 0 : Math.max(0, Math.floor((now - state.runningSince) / 1000))))
 }

@@ -1,5 +1,8 @@
+import DataSource from '../components/DataSource'
+import SeasonSelector from '../components/SeasonSelector'
+import { DATA_SEASON } from '../api/client'
 import { Link } from 'react-router'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import { listCompetitions, listPublicGames } from '../api/public'
 import type { Competition, PublicGame, Team } from '../api/types'
 import { useApi } from '../api/useApi'
@@ -67,13 +70,13 @@ export default function PublicHomePage() {
           <Link to="/" aria-label="CampHoop, início">
             <Brand />
           </Link>
-          <Link to="/login" className="btn btn--accent public__login">Login</Link>
+          <div className="public__actions"><SeasonSelector /><Link to="/login" className="btn btn--accent public__login">Login</Link></div>
         </div>
       </header>
 
       <main className="public__inner public__main">
         <section className="public__intro">
-          <div className="eyebrow">BASQUETE ESCOLAR E DE BASE</div>
+          <div className="eyebrow">BASQUETE UNIVERSITÁRIO · NCAA {DATA_SEASON}</div>
           <h1>Torneios e jogos, abertos a todos.</h1>
           <p>Acompanhe placares, próximos jogos e resultados das equipes, sem precisar de conta.</p>
         </section>
@@ -103,6 +106,7 @@ export default function PublicHomePage() {
             <h2 id="proximos" className="public__title">Próximos jogos</h2>
             <div className="card games">
               {games.loading && <p className="muted">Carregando jogos…</p>}
+              {games.data && !games.data.upcoming.length && <p className="muted">Não há próximos jogos cadastrados. Explore os resultados históricos da NCAA.</p>}
               {games.data?.upcoming.map((g) => (
                 <article key={g.id} className="game">
                   <div className="game__when">
@@ -138,9 +142,9 @@ export default function PublicHomePage() {
             </div>
           </section>
         </div>
-      </main>
+      <DataSource /></main>
 
-      <footer className="public__inner public__foot">© 2025 CampHoop · Protótipo demonstrativo com dados fictícios</footer>
+      <footer className="public__inner public__foot">CampHoop · Dados históricos do basquete universitário americano</footer>
     </div>
   )
 }

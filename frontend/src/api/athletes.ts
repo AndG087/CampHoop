@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /**
  * Camada de acesso aos atletas. As telas só usam estas funções.
  * Hoje leem dados fictícios; depois viram chamadas ao backend
@@ -67,12 +68,16 @@ export function toSummary(row: (typeof athletes)[number]): AthleteSummary {
 }
 
 export async function listAthletes(): Promise<AthleteSummary[]> {
+  if (remoteApi) return request('/athletes')
+
   await delay()
   return athletes.map(toSummary).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
 }
 
 /** Perfil completo. O bloco `private` só vem para quem pode vê-lo, como o backend fará. */
 export async function getAthlete(id: string, viewer: DemoUser | null): Promise<AthleteProfile | null> {
+  if (remoteApi) return request(`/athletes/${encodeURIComponent(id)}`)
+
   await delay()
   const row = athletes.find((a) => a.id === id)
   if (!row) return null
@@ -89,6 +94,8 @@ export async function getAthlete(id: string, viewer: DemoUser | null): Promise<A
 }
 
 export async function listTeams(): Promise<Team[]> {
+  if (remoteApi) return request('/teams')
+
   await delay()
   return teams.map((t) => teamById(t.id))
 }

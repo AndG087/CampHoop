@@ -1,3 +1,6 @@
+import DataSource from '../components/DataSource'
+import SeasonSelector from '../components/SeasonSelector'
+import { DATA_SEASON } from '../api/client'
 import { Link, Outlet } from 'react-router'
 import { useSession } from '../auth/session'
 import AppShell, { Brand } from './AppShell'
@@ -9,9 +12,9 @@ export default function CompetitionShell() {
   if (user) return <AppShell />
   return (
     <div className="public">
-      <header className="public__bar"><div className="public__inner public__bar-inner"><Link to="/" aria-label="CampHoop, início"><Brand /></Link><Link to="/login" className="btn btn--accent">Login</Link></div></header>
-      <main className="public__inner public__main"><Outlet /></main>
-      <footer className="public__inner public__foot">CampHoop · Basquete de base · Demonstração 2025/26</footer>
+      <header className="public__bar"><div className="public__inner public__bar-inner"><Link to="/" aria-label="CampHoop, início"><Brand /></Link><div className="public__actions"><SeasonSelector /><Link to="/login" className="btn btn--accent">Login</Link></div></div></header>
+      <main className="public__inner public__main"><Outlet /><DataSource /></main>
+      <footer className="public__inner public__foot">CampHoop · Basquete de base · Demonstração {DATA_SEASON}</footer>
     </div>
   )
 }

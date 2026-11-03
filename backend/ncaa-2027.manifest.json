@@ -1,0 +1,98 @@
+{
+  "provider": "SportsDataverse / ESPN",
+  "season": "2026/27",
+  "scope": "Published NCAA calendars (including non-Division-I opponents) and available box scores, men and women",
+  "sources": [
+    {
+      "url": "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_mens_college_basketball_schedules/mbb_schedule_2027.parquet",
+      "sha256": "28c7c39e950e9ecb11eca221264787c188a4ed3edfafcfc2970682f8d38bf45b",
+      "rows": 6070
+    },
+    {
+      "url": "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_mens_college_basketball_player_boxscores/player_box_2027.parquet",
+      "sha256": "e12ecf2021ba60a008bf11ecc7d45c271252c692a3b40ff8b431b3367d7b8b90",
+      "rows": 5854
+    },
+    {
+      "url": "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_womens_college_basketball_schedules/wbb_schedule_2027.parquet",
+      "sha256": "55ed8d10988402eccc75dc1bad15909198bf98c9e112301e8c56ff257e44e005",
+      "rows": 5804
+    },
+    {
+      "url": "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_womens_college_basketball_player_boxscores/player_box_2027.parquet",
+      "sha256": "ea426387e855b6800abf93ccd772c30cc7ff92b33f84e9e708065b51baca73e2",
+      "rows": 4633
+    }
+  ],
+  "warnings": [
+    {
+      "gameId": "ncaa-m-2027-game-401920769",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401917683",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401928020",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401929300",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401921077",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401918581",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401927484",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401929155",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401927989",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401927980",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401921305",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    },
+    {
+      "gameId": "ncaa-w-2027-game-401929054",
+      "reason": "Official final score retained; individual statistics are missing or differ from that score."
+    }
+  ],
+  "transforms": [
+    "Season end year 2027 means academic season 2026/27",
+    "Roster snapshots namespaced by season and team; no 2024/25 roster overwritten",
+    "Scheduled scores are null, never fabricated 0-0 results",
+    "Games with postponed status retained as postponed",
+    "Missing athlete identifiers excluded and counted",
+    "Official scores retained independently of available individual statistics",
+    "Times converted to America/Sao_Paulo; unspecified times remain null"
+  ],
+  "counts": {
+    "teams": 1429,
+    "games": 11779,
+    "athletes": 10452,
+    "completed": 348,
+    "scheduled": 11430,
+    "postponed": 1,
+    "completedWithBoxScores": 348,
+    "completedWithoutBoxScores": 0,
+    "excludedPlayerRowsWithoutId": 35,
+    "excludedGamesWithTbdTeams": 95
+  }
+}

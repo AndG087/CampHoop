@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { HomeLeader, HomePerformance, HomeSummary } from '../api/home'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import type { PublicGame, ScheduleEvent, Team } from '../api/types'
 import Avatar from '../components/Avatar'
 import { formatAverage, formatDate, formatGameDay, formatShortDate } from '../format'
@@ -29,14 +29,15 @@ export function SectionHeading({ number, title, link, to }: { number: string; ti
 
 export function MatchHero({ game }: { game: PublicGame }) {
   const live = game.status === 'ao-vivo'
+  const finished = game.status === 'encerrado'
   return (
     <article className="home-match-hero">
       <svg className="home-court-art" viewBox="0 0 640 340" fill="none" aria-hidden="true"><path d="M20 20h600v300H20zM320 20v300" /><circle cx="320" cy="170" r="48" /><path d="M20 105h100v130H20M620 105H520v130h100M20 45a133 133 0 0 1 0 250M620 45a133 133 0 0 0 0 250" /><circle cx="75" cy="170" r="12" /><circle cx="565" cy="170" r="12" /></svg>
-      <div className="home-match-hero__top"><span className={`home-status${live ? ' home-status--live' : ''}`}>{live ? 'AO VIVO AGORA' : 'PRÓXIMO CONFRONTO'}</span><span>{game.competition}</span></div>
-      <div className="home-match-hero__title"><span>O basquete não para.</span><h2>{live ? 'É dia de jogo.' : 'O próximo desafio.'}</h2></div>
+      <div className="home-match-hero__top"><span className={`home-status${live ? ' home-status--live' : ''}`}>{live ? 'AO VIVO AGORA' : finished ? 'RESULTADO EM DESTAQUE' : 'PRÓXIMO CONFRONTO'}</span><span>{game.competition}</span></div>
+      <div className="home-match-hero__title"><span>O basquete não para.</span><h2>{live ? 'É dia de jogo.' : finished ? 'Um jogo para rever.' : 'O próximo desafio.'}</h2></div>
       <div className="home-matchup">
         <Link to={`/times/${game.home.id}`} className="home-matchup__team"><Crest team={game.home} large /><span><b>{game.home.club.name}</b><small>{game.home.name}</small></span></Link>
-        <div className="home-matchup__middle">{live ? <strong>{game.homeScore}<i>:</i>{game.awayScore}</strong> : <strong className="home-matchup__vs">VS</strong>}<span>{live ? game.period : `${formatGameDay(game.date, DEMO_TODAY)} · ${game.time}`}</span></div>
+        <div className="home-matchup__middle">{live || finished ? <strong>{game.homeScore}<i>:</i>{game.awayScore}</strong> : <strong className="home-matchup__vs">VS</strong>}<span>{live ? game.period : finished ? `${formatDate(game.date)} · PLACAR FINAL` : `${formatGameDay(game.date, DEMO_TODAY)} · ${game.time}`}</span></div>
         <Link to={`/times/${game.away.id}`} className="home-matchup__team"><Crest team={game.away} large /><span><b>{game.away.club.name}</b><small>{game.away.name}</small></span></Link>
       </div>
       <div className="home-match-hero__foot"><span>⌖ {game.venue ?? 'Local a definir'}</span><Link to={`/ao-vivo?partida=${game.id}`}>Ver partida <Icon name="arrow" /></Link></div>
@@ -84,7 +85,7 @@ export function PerformanceChart({ games, mine }: { games: HomePerformance[]; mi
         <polyline points={points('scored')} fill="none" stroke="#e77d2d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
         {games.map((g, i) => <g key={g.id}><circle cx={x(i)} cy={y(g.scored)} r={selected.id === g.id ? 7 : 5} fill={selected.id === g.id ? '#e77d2d' : '#fffdf8'} stroke="#e77d2d" strokeWidth="2.5" /><text x={x(i)} y={y(g.scored) - 14} textAnchor="middle" className="home-chart__value">{g.scored}</text><text x={x(i)} y="184" textAnchor="middle">{formatShortDate(g.date)}</text></g>)}
       </svg>
-      <figcaption><span><i />{mine ? 'Pontos feitos' : 'Mandantes'}</span><span><i />{mine ? 'Pontos sofridos' : 'Visitantes'}</span><small>Últimos {games.length} jogos encerrados</small></figcaption>
+      <figcaption><span><i />{mine ? 'Pontos feitos' : 'Mandantes'}</span><span><i />{mine ? 'Pontos sofridos' : 'Visitantes'}</span><small>{games.length === 1 ? 'Último jogo encerrado' : `Últimos ${games.length} jogos encerrados`}</small></figcaption>
       <div className="home-chart-games" role="group" aria-label="Selecionar partida do gráfico">{games.map((g) => <button key={g.id} type="button" aria-pressed={selected.id === g.id} onClick={() => setActiveId(g.id)}>{formatShortDate(g.date)}</button>)}</div>
       <div className="home-chart-detail" aria-live="polite"><span>{mine ? 'vs ' : ''}{selected.label}<small>{formatShortDate(selected.date)}</small></span><b>{selected.scored}<span> × </span>{selected.allowed}</b><Link to={agendaLink(selected.date)} aria-label={`Ver jogo de ${formatDate(selected.date)} na agenda`}>↗</Link></div>
       <details className="home-chart-data"><summary>Consultar valores dos jogos</summary><div className="table-wrap"><table className="table"><thead><tr><th>Data</th><th>{mine ? 'Adversário' : 'Confronto'}</th><th>{mine ? 'Feitos' : 'Mandante'}</th><th>{mine ? 'Sofridos' : 'Visitante'}</th></tr></thead><tbody>{games.map((g) => <tr key={g.id}><td>{formatShortDate(g.date)}</td><td>{g.label}</td><td>{g.scored}</td><td>{g.allowed}</td></tr>)}</tbody></table></div></details>
@@ -96,7 +97,7 @@ export function Leaders({ leaders }: { leaders: HomeLeader[] }) {
   const [metric, setMetric] = useState<'points' | 'rebounds' | 'assists'>('points')
   const sorted = [...leaders].sort((a, b) => b[metric] - a[metric] || a.name.localeCompare(b.name, 'pt-BR')).slice(0, 4)
   const unit = { points: 'PTS/J', rebounds: 'REB/J', assists: 'AST/J' }[metric]
-  return <section className="home-panel home-leaders"><SectionHeading number="02" title="Quem faz acontecer" to="/atletas" link="Atletas" /><div className="home-segment" role="group" aria-label="Estatística dos destaques">{([['points', 'Pontos'], ['rebounds', 'Rebotes'], ['assists', 'Assistências']] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={metric === key} onClick={() => setMetric(key)}>{label}</button>)}</div><ol className="home-leader-list">{sorted.map((a, i) => <li key={a.id}><Link to={`/atletas/${a.id}`}><span className="home-leader-rank">{String(i + 1).padStart(2, '0')}</span><Avatar name={a.name} /><span className="home-leader-name"><b>{a.name}</b><small>#{a.number} · {a.team.club.shortName} · {a.team.category}</small></span><span className="home-leader-stat"><b>{formatAverage(a[metric])}</b><small>{unit}</small></span></Link></li>)}</ol>{!sorted.length && <p className="home-empty">Ainda não há estatísticas registradas.</p>}<p className="home-panel-note">Médias por partida com estatística registrada.</p></section>
+  return <section className="home-panel home-leaders"><SectionHeading number="02" title="Quem faz acontecer" to="/atletas" link="Atletas" /><div className="home-segment" role="group" aria-label="Estatística dos destaques">{([['points', 'Pontos'], ['rebounds', 'Rebotes'], ['assists', 'Assistências']] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={metric === key} onClick={() => setMetric(key)}>{label}</button>)}</div><ol className="home-leader-list">{sorted.map((a, i) => <li key={a.id}><Link to={`/atletas/${a.id}`}><span className="home-leader-rank">{String(i + 1).padStart(2, '0')}</span><Avatar name={a.name} /><span className="home-leader-name"><b>{a.name}</b><small>#{a.number ?? '—'} · {a.team.club.shortName} · {a.team.category}</small></span><span className="home-leader-stat"><b>{formatAverage(a[metric])}</b><small>{unit}</small></span></Link></li>)}</ol>{!sorted.length && <p className="home-empty">Ainda não há estatísticas registradas.</p>}<p className="home-panel-note">Médias por partida com estatística registrada.</p></section>
 }
 
 export function UpcomingEvent({ event }: { event: ScheduleEvent }) {

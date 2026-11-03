@@ -1,6 +1,7 @@
+import { DATA_SEASON } from '../api/client'
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router'
-import { deleteTacticalPlay, getTacticsWorkspace, saveTacticalPlay, saveTacticsDraft, TacticsError, type TacticsWorkspace } from '../api/tactics'
+import { deleteTacticalPlay, getTacticsWorkspace, saveTacticalPlay, saveTacticsDraft, type TacticsWorkspace } from '../api/tactics'
 import { changeTactic, contentStamp, DRAWING_COLORS, makeTacticalBoard, redoTactic, TACTIC_KINDS, TACTIC_TEMPLATES, undoTactic, type DrawingColor, type TacticalPlay, type TacticDraft, type TacticHistory } from '../api/tacticsTypes'
 import { newId } from '../api/mock/store'
 import { useApi } from '../api/useApi'
@@ -31,6 +32,8 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
   const [color, setColor] = useState<DrawingColor>('ink')
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
+  const [draftStatus, setDraftStatus] = useState('Rascunho carregado')
+  const draftWrite = useRef(0)
   const [feedback, setFeedback] = useState<{ error: boolean; text: string } | null>(null)
   const [pending, setPending] = useState<{ action: () => void; label: string } | null>(null)
   const [deleting, setDeleting] = useState<TacticalPlay | null>(null)
@@ -44,8 +47,16 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
   function install(next: TacticHistory) { historyRef.current = next; setHistory(next) }
   function apply(next: TacticHistory) {
     if (next === historyRef.current) return
-    try { saveTacticsDraft(user, workspace.team.id, next.present); install(next) }
-    catch (e) { setFeedback({ error: true, text: e instanceof TacticsError ? e.message : 'Não foi possível preservar o rascunho.' }) }
+    try { persistDraft(next.present); install(next) }
+    catch (e) { setFeedback({ error: true, text: e instanceof Error ? e.message : 'Não foi possível preservar o rascunho.' }) }
+  }
+  function persistDraft(value: TacticDraft) {
+    const write = ++draftWrite.current
+    setDraftStatus('Sincronizando rascunho…')
+    Promise.resolve(saveTacticsDraft(user, workspace.team.id, value)).then(
+      () => { if (write === draftWrite.current) setDraftStatus('Rascunho salvo') },
+      (error: Error) => { if (write === draftWrite.current) { setDraftStatus('Rascunho não salvo'); setFeedback({ error: true, text: error.message }) } },
+    )
   }
   function change(patch: Partial<TacticDraft>) { apply(changeTactic(historyRef.current, { ...historyRef.current.present, ...patch })) }
   function requestSwitch(action: () => void, label: string) {
@@ -54,7 +65,7 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
   }
   function open(d: TacticDraft, clean: string) {
     try {
-      saveTacticsDraft(user, workspace.team.id, d)
+      persistDraft(d)
       install({ past: [], present: structuredClone(d), future: [] })
       setCleanStamp(clean); setFeedback(null); setTool('select')
     } catch (e) { setFeedback({ error: true, text: e instanceof Error ? e.message : 'Não foi possível abrir a jogada.' }) }
@@ -74,7 +85,7 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
       install(asCopy ? { past: [], present: next, future: [] } : { ...historyRef.current, present: next })
       setCleanStamp(contentStamp(next))
       setFeedback({ error: false, text: `${saved.name} salva no caderno da equipe.` })
-    } catch (e) { setFeedback({ error: true, text: e instanceof TacticsError ? e.message : 'Não foi possível salvar a jogada. Tente novamente.' }) }
+    } catch (e) { setFeedback({ error: true, text: e instanceof Error ? e.message : 'Não foi possível salvar a jogada. Tente novamente.' }) }
     finally { setBusy(false) }
   }
   async function removePlay() {
@@ -120,8 +131,8 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
 
   return (
     <div className="tactics-page" onKeyDown={keyboard}>
-      <header className="tactics-heading"><div><div className="eyebrow">PRANCHETA DO TÉCNICO · TEMPORADA 2025/26</div><h1>O próximo ponto<br />começa aqui<span>.</span></h1><p>Posicione. Desenhe. Prepare a próxima jogada.</p></div><div className="tactics-heading__actions"><span className="tactics-private"><span /> ACESSO DA COMISSÃO TÉCNICA</span><div><button type="button" className="btn btn--ghost" disabled={busy} onClick={() => requestSwitch(() => open(structuredClone(workspace.initial), contentStamp(workspace.initial)), 'começar uma nova jogada')}>+ Nova jogada</button><button type="button" className="btn btn--accent" disabled={busy} onClick={() => void save()}><Icon name="trophy" /> Salvar no caderno</button></div></div></header>
-      <div className="tactics-context"><span><b>{workspace.team.club.name}</b> · {workspace.team.name}</span><Link to={`/times/${workspace.team.id}`}>Ver minha equipe ↗</Link><span className="tactics-draft-status">{draft.playId && !dirty ? '● Jogada salva no caderno' : '● Rascunho preservado neste navegador'}</span></div>
+      <header className="tactics-heading"><div><div className="eyebrow">PRANCHETA DO TÉCNICO · BASE NCAA {DATA_SEASON}</div><h1>O próximo ponto<br />começa aqui<span>.</span></h1><p>Posicione. Desenhe. Prepare a próxima jogada.</p></div><div className="tactics-heading__actions"><span className="tactics-private"><span /> ACESSO DA COMISSÃO TÉCNICA</span><div><button type="button" className="btn btn--ghost" disabled={busy} onClick={() => requestSwitch(() => open(structuredClone(workspace.initial), contentStamp(workspace.initial)), 'começar uma nova jogada')}>+ Nova jogada</button><button type="button" className="btn btn--accent" disabled={busy} onClick={() => void save()}><Icon name="trophy" /> Salvar no caderno</button></div></div></header>
+      <div className="tactics-context"><span><b>{workspace.team.club.name}</b> · {workspace.team.name}</span><Link to={`/times/${workspace.team.id}`}>Ver minha equipe ↗</Link><span className="tactics-draft-status">{draft.playId && !dirty ? '● Jogada salva no caderno' : draftStatus}</span></div>
       {feedback && <div className={`tactics-feedback${feedback.error ? ' tactics-feedback--error' : ''}`} role={feedback.error ? 'alert' : 'status'}>{feedback.text}</div>}
       <div className="tactics-layout" inert={busy}>
         <section className="tactics-workbench" aria-label="Editor da jogada">
@@ -136,7 +147,7 @@ function TacticsEditor({ workspace, user }: { workspace: TacticsWorkspace; user:
         <aside className="tactics-sidebar">
           <section className="tactics-panel"><div className="tactics-section-heading"><h2>Sua equipe em quadra</h2><span>{draft.board.players.length}/5</span></div><p className="tactics-section-intro">Os marcadores usam os números do elenco.</p><div className="tactics-roster">{draft.board.players.map((p) => {
             const athlete = workspace.roster.find((a) => a.id === p.athleteId)!
-            return <div key={p.id}><span className="tactics-jersey">{String(athlete.number).padStart(2, '0')}</span><label><span>{athlete.position}</span><select aria-label={`Atleta da posição de ${athlete.name}`} value={p.athleteId} onChange={(e) => change({ board: { ...draft.board, players: draft.board.players.map((a) => a.id === p.id ? { ...a, athleteId: e.target.value } : a) } })}>{workspace.roster.filter((a) => a.id === p.athleteId || !draft.board.players.some((m) => m.athleteId === a.id)).map((a) => <option key={a.id} value={a.id}>#{a.number} · {a.name}</option>)}</select></label><button type="button" aria-label={`Retirar ${athlete.name} da prancheta`} onClick={() => change({ board: { ...draft.board, players: draft.board.players.filter((a) => a.id !== p.id) } })}>×</button></div>
+            return <div key={p.id}><span className="tactics-jersey">{String(athlete.number ?? '—').padStart(2, '0')}</span><label><span>{athlete.position}</span><select aria-label={`Atleta da posição de ${athlete.name}`} value={p.athleteId} onChange={(e) => change({ board: { ...draft.board, players: draft.board.players.map((a) => a.id === p.id ? { ...a, athleteId: e.target.value } : a) } })}>{workspace.roster.filter((a) => a.id === p.athleteId || !draft.board.players.some((m) => m.athleteId === a.id)).map((a) => <option key={a.id} value={a.id}>#{a.number ?? '—'} · {a.name}</option>)}</select></label><button type="button" aria-label={`Retirar ${athlete.name} da prancheta`} onClick={() => change({ board: { ...draft.board, players: draft.board.players.filter((a) => a.id !== p.id) } })}>×</button></div>
           })}</div><button type="button" className="tactics-add-player" disabled={draft.board.players.length >= 5 || !available.length} onClick={() => { const a = available.find((a) => a.status === 'ativo') ?? available[0]; if (a) change({ board: { ...draft.board, players: [...draft.board.players, { id: newId('posicao'), athleteId: a.id, x: 50, y: 70 }] } }) }}>+ Adicionar atleta à quadra</button><div className="tactics-legend"><span><i /> Minha equipe</span><span><i /> Defesa simulada</span></div>{draft.board.ball && <button type="button" className="tactics-remove-ball" onClick={() => change({ board: { ...draft.board, ball: null } })}>Retirar bola da quadra</button>}<p className="tactics-footnote">Esta formação pertence à prancheta. A escalação da partida é registrada na central ao vivo.</p></section>
           <section className="tactics-panel tactics-notebook"><div className="tactics-section-heading"><h2>Caderno de jogadas</h2><span>{workspace.plays.length.toString().padStart(2, '0')}</span></div><input className="tactics-search" type="search" aria-label="Buscar no caderno de jogadas" placeholder="Encontrar uma jogada…" value={query} onChange={(e) => setQuery(e.target.value)} /><ul>{plays.map((p) => <li key={p.id} className={draft.playId === p.id ? 'tactics-notebook__active' : ''}><button type="button" className="tactics-notebook__open" aria-pressed={draft.playId === p.id} onClick={() => requestSwitch(() => open(fromPlay(p), contentStamp(p)), `abrir ${p.name}`)}><svg viewBox={`0 0 1000 ${p.board.court === 'half' ? 940 : 560}`} aria-hidden="true"><BoardScene board={p.board} roster={workspace.roster} compact /></svg><span><b>{p.name}</b><small>{TACTIC_KINDS[p.kind]} · {p.board.court === 'half' ? 'Meia quadra' : 'Quadra inteira'}</small></span></button><div className="tactics-notebook__actions"><button type="button" disabled={busy} aria-label={`Duplicar ${p.name}`} onClick={() => requestSwitch(() => void save(true, fromPlay(p)), `duplicar ${p.name}`)}>Duplicar</button><button type="button" disabled={busy} aria-label={`Excluir ${p.name} do caderno`} onClick={() => setDeleting(p)}>Excluir</button></div></li>)}</ul>{!plays.length && <div className="tactics-notebook__empty"><Icon name="ball" /><b>{query ? 'Nenhuma jogada encontrada.' : 'Seu repertório começa aqui.'}</b><p>{query ? 'Experimente outro nome.' : 'Desenhe uma ideia e salve no caderno para usar no próximo treino.'}</p></div>}{draft.playId && <button type="button" className="tactics-save-copy" disabled={busy} onClick={() => void save(true)}>Salvar edição como cópia ↗</button>}</section>
           <section className="tactics-models"><div className="eyebrow">UM PONTO DE PARTIDA</div><h2>Ideias para sair do papel.</h2>{TACTIC_TEMPLATES.map((t, i) => <button type="button" key={t.id} onClick={() => change({ name: t.name, kind: t.kind, board: makeTacticalBoard(workspace.roster, t.id) })}><span>{String(i + 1).padStart(2, '0')}</span><span><b>{t.name}</b><small>{t.description}</small></span><span aria-hidden="true">↗</span></button>)}<p>Os modelos são exemplos editáveis. Adapte à sua equipe.</p></section>
@@ -154,7 +165,7 @@ export default function TacticsPage() {
   const teamId = user?.teamId ?? ''
   const { data, loading, error } = useApi(() => getTacticsWorkspace(user, teamId), `tactics:${user?.id}:${teamId}:${retry}`)
   if (!user) return null
-  if (error) return <div className="card" role="alert"><p>{error instanceof TacticsError ? error.message : 'Não foi possível abrir a prancheta.'}</p><button type="button" className="btn btn--ghost" onClick={() => setRetry((n) => n + 1)}>Tentar novamente</button></div>
+  if (error) return <div className="card" role="alert"><p>{error instanceof Error ? error.message : 'Não foi possível abrir a prancheta.'}</p><button type="button" className="btn btn--ghost" onClick={() => setRetry((n) => n + 1)}>Tentar novamente</button></div>
   if (!data && loading) return <p className="muted" role="status">Preparando a prancheta da sua equipe…</p>
   if (!data) return null
   return <TacticsEditor key={`${user.id}:${teamId}`} workspace={data} user={user} />

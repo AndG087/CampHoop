@@ -31,7 +31,7 @@ export const TACTIC_TEMPLATES: { id: TacticTemplate; name: string; kind: TacticK
 export function makeTacticalBoard(roster: { id: string; status: string }[], template: TacticTemplate = 'horns'): TacticalBoard {
   const positions = template === 'zone' ? [[34, 52], [66, 52], [18, 25], [50, 24], [82, 25]] : template === 'five-out' ? [[50, 78], [14, 53], [86, 53], [8, 18], [92, 18]] : [[50, 77], [9, 18], [91, 18], [34, 43], [66, 43]]
   return {
-    court: 'half', players: roster.filter((a) => a.status === 'ativo').slice(0, 5).map((a, i) => ({ id: `slot-${i + 1}`, athleteId: a.id, x: positions[i][0], y: positions[i][1] })),
+    court: 'half', players: roster.filter((a) => ['ativo', 'historico', 'registrado'].includes(a.status)).slice(0, 5).map((a, i) => ({ id: `slot-${i + 1}`, athleteId: a.id, x: positions[i][0], y: positions[i][1] })),
     defenders: [[48, 64], [15, 28], [85, 28], [39, 34], [61, 34]].map(([x, y], i) => ({ id: `defender-${i + 1}`, x, y })),
     showDefenders: false, ball: { x: 56, y: 78 }, drawings: [],
   }

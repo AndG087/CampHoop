@@ -1,3 +1,4 @@
+import { DATA_SEASON } from '../api/client'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { listCompetitions } from '../api/public'
@@ -51,7 +52,7 @@ export default function CompetitionsPage() {
   return (
     <div className="competitions-page">
       <header className="competition-page-heading">
-        <div><div className="eyebrow">A TEMPORADA ACONTECE AQUI · 2025/26</div><h1>Mais que um jogo<span>.</span></h1><p>Os campeonatos, as equipes e cada passo até o título.</p></div>
+        <div><div className="eyebrow">A TEMPORADA ACONTECE AQUI · {DATA_SEASON}</div><h1>Mais que um jogo<span>.</span></h1><p>Os campeonatos, as equipes e cada passo até o título.</p></div>
         {can('competition.manage') && <button type="button" className="btn btn--accent" onClick={() => setCreating(true)}>+ Criar campeonato</button>}
       </header>
 
@@ -71,7 +72,7 @@ export default function CompetitionsPage() {
       <div className="competition-filters">
         <input type="search" aria-label="Buscar campeonato" placeholder="Buscar campeonato…" value={query} onChange={(e) => filter('busca', e.target.value)} />
         <select aria-label="Situação do campeonato" value={status} onChange={(e) => filter('status', e.target.value)}><option value="">Todas as situações</option>{Object.entries(COMPETITION_STATUS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
-        <select aria-label="Categoria do campeonato" value={category} onChange={(e) => filter('categoria', e.target.value)}><option value="">Todas as categorias</option>{['Sub-17', 'Sub-15', 'Sub-13'].map((c) => <option key={c}>{c}</option>)}</select>
+        <select aria-label="Categoria do campeonato" value={category} onChange={(e) => filter('categoria', e.target.value)}><option value="">Todas as categorias</option>{['Universitário', 'Sub-17', 'Sub-15', 'Sub-13'].map((c) => <option key={c}>{c}</option>)}</select>
       </div>
 
       {loading && <p className="muted" role="status">Carregando campeonatos…</p>}
@@ -79,11 +80,11 @@ export default function CompetitionsPage() {
       {!loading && !error && !visible.length && <div className="competition-empty"><Icon name="trophy" /><h3>Nenhum campeonato por aqui.</h3><p>Tente outros filtros para encontrar seu próximo desafio.</p><button type="button" className="btn btn--ghost" onClick={() => setParams({})}>Limpar filtros</button></div>}
       <div className="competition-grid">
         {visible.map((c) => <Link to={`/campeonatos/${c.id}`} className={`competition-card competition-card--${c.status}`} key={c.id}>
-          <div className="competition-card__cover"><span className={`competition-status competition-status--${c.status}`}>{COMPETITION_STATUS[c.status]}</span><Icon name="trophy" /><span className="competition-card__season">CAMPHOOP · 25/26</span></div>
+          <div className="competition-card__cover"><span className={`competition-status competition-status--${c.status}`}>{COMPETITION_STATUS[c.status]}</span><Icon name="trophy" /><span className="competition-card__season">CAMPHOOP · {c.season ?? DATA_SEASON}</span></div>
           <div className="competition-card__body"><div className="eyebrow">{c.phase}</div><h3>{c.name}</h3><p>{c.categories}</p><div className="competition-card__stats"><span><b>{c.teams}</b> equipes inscritas</span><span><b>{c.divisions.length}</b> divisões</span></div><p className="competition-card__note">{c.note}</p><div className="competition-card__open"><span>{canManageCompetition(user, c) ? 'Gerenciar campeonato' : 'Classificação e jogos'}</span><Icon name="arrow" /></div></div>
         </Link>)}
       </div>
-      <p className="competition-demo-note">Demonstração com dados fictícios · Alterações salvas neste navegador.</p>
+      <p className="competition-demo-note">Histórico NCAA importado · Novos campeonatos salvos no banco.</p>
       {user && creating && <CreateCompetitionDialog user={user} onClose={() => setCreating(false)} onCreated={(id) => { setCreating(false); navigate(`/campeonatos/${id}`) }} />}
     </div>
   )

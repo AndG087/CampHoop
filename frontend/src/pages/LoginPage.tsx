@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { DEMO_USERS, ROLES, ROLE_INFO } from '../auth/roles'
 import { useSession } from '../auth/session'
+import { remoteApi } from '../api/client'
 import './LoginPage.css'
 
 export default function LoginPage() {
@@ -12,20 +13,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   if (user) return <Navigate to={from} replace />
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password) {
       setError('Preencha o e-mail e a senha.')
       return
     }
-    if (!signIn(email, password)) {
-      setError('E-mail não encontrado. Use uma das contas de demonstração abaixo.')
-      return
-    }
-    navigate(from, { replace: true })
+    setBusy(true)
+    try {
+      if (!await signIn(email, password)) { setError('E-mail ou senha inválidos.'); return }
+      navigate(from, { replace: true })
+    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível entrar.') }
+    finally { setBusy(false) }
   }
 
   return (
@@ -43,7 +46,7 @@ export default function LoginPage() {
           <h1>O jogo cresce com você.</h1>
           <p>Um espaço para equipes, atletas e comunidades viverem o basquete com mais dados, conexão e propósito.</p>
         </div>
-        <small className="login__legal">© 2025 CampHoop · Protótipo demonstrativo</small>
+        <small className="login__legal">CampHoop · Ambiente de desenvolvimento</small>
       </div>
 
       <div className="login__box">
@@ -61,11 +64,11 @@ export default function LoginPage() {
             <input type="password" autoComplete="current-password" placeholder="Sua senha" value={password} onChange={(e) => { setPassword(e.target.value); setError('') }} />
           </label>
           {error && <p className="login__error" role="alert">{error}</p>}
-          <button type="submit" className="btn btn--accent login__submit">Entrar →</button>
+          <button type="submit" disabled={busy} className="btn btn--accent login__submit">{busy ? 'Entrando…' : 'Entrar →'}</button>
 
           <details className="demo-accounts">
-            <summary>Contas de demonstração</summary>
-            <p>Não há login real ainda: qualquer senha funciona.</p>
+            <summary>Contas de teste</summary>
+            <p>{remoteApi ? 'Contas locais de teste. Solicite a senha ao administrador deste ambiente.' : 'Modo de demonstração: qualquer senha preenchida funciona.'}</p>
             <ul>
               {ROLES.map((role) => (
                 <li key={role}>

@@ -1,3 +1,6 @@
+import { DATA_SEASON } from '../api/client'
+import DataSource from '../components/DataSource'
+import SeasonSelector from '../components/SeasonSelector'
 import { startTransition, useEffect, useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { ROLE_INFO } from '../auth/roles'
@@ -65,10 +68,11 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           ))}
         </nav>
         <div className="sidebar__bottom">
-          <button type="button" className="season">
-            <span>TEMPORADA ATUAL</span>
-            <strong>2025 / 2026 ⌄</strong>
-          </button>
+          <div className="season">
+            <span>BASE DE DADOS</span>
+            <strong>{DATA_SEASON}</strong>
+            <SeasonSelector />
+          </div>
           <div className="user">
             <div className="avatar" aria-hidden="true">{user.initials}</div>
             <div className="user__info">
@@ -86,17 +90,18 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             CampHoop <span className="crumb__sep">/</span> <b>{current?.label ?? 'Página não encontrada'}</b>
           </div>
           <div className="topbar__actions">
+            <SeasonSelector />
             <input className="search" type="search" placeholder="⌕  Buscar time, atleta..." aria-label="Buscar time ou atleta" />
             <button type="button" className="notif" aria-label="Notificações">
               <BellIcon />
             </button>
-            <span className="role-pill" title={`Conta de demonstração: ${user.name}`}>
-              <span className="role-pill__demo">DEMO</span>
+            <span className="role-pill" title={`Conta de teste: ${user.name}`}>
+              <span className="role-pill__demo">TESTE</span>
               {ROLE_INFO[user.role].label}
             </span>
           </div>
         </header>
-        <section className="content">{children ?? <Outlet />}</section>
+        <section className="content">{children ?? <Outlet />}<DataSource /></section>
       </main>
 
       {moreOpen && (

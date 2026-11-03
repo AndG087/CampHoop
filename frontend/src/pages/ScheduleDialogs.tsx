@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { listCompetitions } from '../api/public'
 import {
-  ScheduleError,
   addExtraTraining,
   addTrainingSlot,
   cancelTraining,
@@ -34,7 +33,7 @@ function useSubmit(onDone: () => void) {
       await action()
       onDone()
     } catch (e) {
-      setError(e instanceof ScheduleError ? e.message : 'Não foi possível salvar. Tente de novo.')
+      setError(e instanceof Error ? e.message : 'Não foi possível salvar. Tente de novo.')
     } finally {
       setBusy(false)
     }

@@ -1,7 +1,8 @@
+import { DATA_SEASON } from '../api/client'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { getHomeSummary, type HomeScope } from '../api/home'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import { useApi } from '../api/useApi'
 import { useSession } from '../auth/session'
 import { formatAverage, formatDate, formatShortDate } from '../format'
@@ -16,12 +17,12 @@ export default function HomePage() {
   if (!user) return null
   const mine = scope === 'minha' && !!user.teamId
   const own = mine ? data?.teams[0] : undefined
-  const featured = data?.live[0] ?? data?.upcoming.find((e) => e.kind === 'jogo')?.game
+  const featured = data?.live[0] ?? data?.upcoming.find((e) => e.kind === 'jogo')?.game ?? data?.results[0]
 
   return (
     <div className="home-dashboard">
-      <header className="home-heading"><div><div className="home-overline"><span className="home-tiny-ball" /> SUA CENTRAL DE BASQUETE</div><h1>Dentro do jogo<span>.</span></h1><p>Olá, {user.name.split(' ')[0]}. {mine ? 'Seu time, seus números, seu próximo desafio.' : 'Tudo o que movimenta a temporada, em um só lugar.'}</p></div><div className="home-heading__right"><span className="home-date">TEMPORADA <b>2025 / 26</b></span><Link to="/agenda" className="btn btn--accent" aria-label="Abrir minha agenda"><Icon name="calendar" /> Minha agenda <span aria-hidden="true">↗</span></Link></div></header>
-      <div className="home-toolbar"><div className="home-segment" role="group" aria-label="Equipes do resumo">{user.teamId && <button type="button" aria-pressed={mine} onClick={() => setScope('minha')}>Minha equipe</button>}<button type="button" aria-pressed={!mine} onClick={() => setScope('todas')}>Todas as equipes</button></div><span>Dados de demonstração · {formatDate(DEMO_TODAY)}</span></div>
+      <header className="home-heading"><div><div className="home-overline"><span className="home-tiny-ball" /> SUA CENTRAL DE BASQUETE</div><h1>Dentro do jogo<span>.</span></h1><p>Olá, {user.name.split(' ')[0]}. {mine ? 'Seu time, seus números, seu próximo desafio.' : 'Tudo o que movimenta a temporada, em um só lugar.'}</p></div><div className="home-heading__right"><span className="home-date">BASE NCAA <b>{DATA_SEASON}</b></span><Link to="/agenda" className="btn btn--accent" aria-label="Abrir minha agenda"><Icon name="calendar" /> Minha agenda <span aria-hidden="true">↗</span></Link></div></header>
+      <div className="home-toolbar"><div className="home-segment" role="group" aria-label="Equipes do resumo">{user.teamId && <button type="button" aria-pressed={mine} onClick={() => setScope('minha')}>Minha equipe</button>}<button type="button" aria-pressed={!mine} onClick={() => setScope('todas')}>Todas as equipes</button></div><span>Dados da temporada selecionada · {formatDate(DEMO_TODAY)}</span></div>
       {loading ? <div className="home-skeleton" role="status"><span>Preparando sua central…</span><div /><div /><div /></div> : error || !data ? <div className="card" role="alert"><p>Não foi possível carregar o resumo.</p><button type="button" className="btn btn--ghost" onClick={() => setVersion((v) => v + 1)}>Tentar novamente</button></div> : <>
         <div className="home-feature-grid">
           {featured ? <MatchHero game={featured} /> : <article className="home-match-hero home-match-hero--empty"><span className="home-status">A TEMPORADA CONTINUA</span><h2>O próximo capítulo<br />começa em quadra.</h2><p>Acompanhe a agenda e prepare-se para os próximos desafios.</p><Link to="/agenda" className="btn btn--accent">Explorar agenda ↗</Link></article>}
@@ -29,8 +30,8 @@ export default function HomePage() {
         </div>
         {data.live.length > 1 && <div className="home-other-live">Também em quadra: {data.live.slice(1).map((g) => <Link key={g.id} to={agendaLink(g.date)}>{g.home.club.shortName} {g.homeScore} × {g.awayScore} {g.away.club.shortName} ↗</Link>)}</div>}
         <section className="home-metrics" aria-label="Números da temporada">
-          <Metric icon="ball" label="Jogos disputados" value={data.games.toString().padStart(2, '0')}><b>{mine ? `${own?.wins ?? 0} vitórias` : `${data.teams.length} equipes`}</b> na temporada</Metric>
-          <Metric icon="people" label={mine ? 'Atletas da equipe' : 'Atletas cadastrados'} value={data.athletes}><b>{data.activeAthletes} em atividade</b> no elenco{mine ? '' : ' geral'}</Metric>
+          <Metric icon="ball" label="Jogos disputados" value={data.games.toString().padStart(2, '0')}><b>{mine ? `${own?.wins ?? 0} ${(own?.wins ?? 0) === 1 ? 'vitória' : 'vitórias'}` : `${data.teams.length} equipes`}</b> na temporada</Metric>
+          <Metric icon="people" label={mine ? 'Atletas da equipe' : 'Atletas cadastrados'} value={data.athletes}><b>{data.activeAthletes} na base</b> no elenco{mine ? '' : ' geral'}</Metric>
           <Metric icon="trophy" label="Pontos por jogo" value={formatAverage(data.pointsPerGame)} accent>{mine ? <><b>{formatAverage(data.pointsAgainst)} sofridos</b> por partida</> : <>Média por equipe · jogos encerrados</>}</Metric>
           <Metric icon="calendar" label="Próximos 7 dias" value={data.weekGames.toString().padStart(2, '0')}><b>{data.weekGames === 1 ? 'jogo agendado' : 'jogos agendados'}</b>{user.teamId ? ` · ${data.weekTrainings} treinos` : ` · ${data.activeCompetitions} campeonato ativo`}</Metric>
         </section>
@@ -43,7 +44,7 @@ export default function HomePage() {
           <section className="home-panel"><SectionHeading number="04" title="Em disputa" /><div className="home-competition-list">{data.competitions.map((c, i) => <Link key={c.id} to={`/campeonatos/${c.id}`}><span className={`home-competition-icon home-competition-icon--${i}`}><Icon name="trophy" /></span><span><small className={`home-competition-status home-competition-status--${c.status}`}>{c.status === 'em-andamento' ? 'EM ANDAMENTO' : c.status === 'inscricoes' ? 'INSCRIÇÕES ABERTAS' : 'FINALIZADO'}</small><b>{c.name}</b><small>{c.phase} · {c.categories}</small><em>{c.note}</em></span><span aria-hidden="true">↗</span></Link>)}</div>{!data.competitions.length && <p className="home-empty">Nenhum campeonato vinculado.</p>}<p className="home-panel-note">Selecione um campeonato para ver a classificação e os jogos.</p></section>
         </div>
         <section className="home-results-section"><SectionHeading number="05" title="O que rolou em quadra" to="/agenda?ver=lista" link="Todos os resultados" /><div className="home-results-strip">{data.results.map((g) => <Link key={g.id} to={agendaLink(g.date)} className="home-result-card"><div><span>{formatShortDate(g.date)} · {g.home.category}</span><span>FINAL</span></div><p><span><Crest team={g.home} />{g.home.club.name}</span><b className={g.homeScore! > g.awayScore! ? 'is-winner' : ''}>{g.homeScore}</b></p><p><span><Crest team={g.away} />{g.away.club.name}</span><b className={g.awayScore! > g.homeScore! ? 'is-winner' : ''}>{g.awayScore}</b></p></Link>)}</div>{!data.results.length && <p className="home-empty">Os resultados aparecem após o encerramento das partidas.</p>}</section>
-        <footer className="home-footer"><span><span className="home-tiny-ball" /> CAMPHOOP <b>GAME ON. GROW TOGETHER.</b></span><span>Estatísticas de jogos encerrados · Temporada 2025/26</span></footer>
+        <footer className="home-footer"><span><span className="home-tiny-ball" /> CAMPHOOP <b>GAME ON. GROW TOGETHER.</b></span><span>Estatísticas de jogos encerrados · Temporada {DATA_SEASON}</span></footer>
       </>}
     </div>
   )

@@ -1,12 +1,11 @@
 /**
- * Formato dos dados que a API do CampHoop vai devolver.
- * Hoje são preenchidos por dados fictícios (api/mock); quando o backend
- * FastAPI existir, as mesmas formas viram os schemas das respostas.
+ * Contratos das telas atendidos por FastAPI. Dados ausentes na fonte são null.
+ * api/mock é reservado ao modo de demonstração e à regressão isolada.
  */
 
-export type Category = 'Sub-13' | 'Sub-15' | 'Sub-17'
+export type Category = 'Sub-13' | 'Sub-15' | 'Sub-17' | 'Universitário'
 export type Gender = 'Feminino' | 'Masculino' | 'Misto'
-export type AthleteStatus = 'ativo' | 'lesionado' | 'afastado'
+export type AthleteStatus = 'ativo' | 'lesionado' | 'afastado' | 'historico' | 'registrado'
 
 export type Club = {
   id: string
@@ -26,14 +25,15 @@ export type Team = {
 
 /** Dados públicos de um atleta: o que qualquer perfil pode ver. */
 export type AthleteSummary = {
+  season?: string | null
   id: string
   name: string
-  number: number
+  number: number | null
   position: string
   photoUrl: string | null
-  age: number
-  heightCm: number
-  memberSince: string // AAAA-MM
+  age: number | null
+  heightCm: number | null
+  memberSince: string | null // AAAA-MM
   status: AthleteStatus
   team: Team
   games: number
@@ -72,6 +72,10 @@ export type CompetitionStatus = 'em-andamento' | 'inscricoes' | 'finalizado'
 export type CompetitionDivision = { category: Category; gender: Gender }
 
 export type Competition = {
+  season?: string
+  ruleset?: string
+  standingsMode?: string
+  sourceUrl?: string | null
   id: string
   name: string
   status: CompetitionStatus
@@ -85,6 +89,7 @@ export type Competition = {
 }
 
 export type Standing = {
+  winRate?: number
   team: Team
   played: number
   wins: number
@@ -104,10 +109,13 @@ export type CompetitionProfile = Competition & {
 
 /** Jogo como aparece para o público: ao vivo, agendado ou encerrado. */
 export type PublicGame = {
+  season?: string | null
+  imported?: boolean
+  sourceStatus?: string | null
   id: string
   date: string // AAAA-MM-DD
   time: string | null // HH:MM
-  status: 'ao-vivo' | 'agendado' | 'encerrado'
+  status: 'ao-vivo' | 'agendado' | 'encerrado' | 'adiado'
   home: Team
   away: Team
   homeScore: number | null

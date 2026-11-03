@@ -73,7 +73,7 @@ export function BoardScene({ board, roster, onTokenDown, onTokenKey, onErase, co
     {board.players.map((p) => {
       const athlete = roster.find((a) => a.id === p.athleteId)
       return <g key={p.id} className="tactics-token" transform={`translate(${p.x * width / 100} ${p.y * height / 100})`} role={onTokenDown ? 'button' : undefined} tabIndex={onTokenDown ? 0 : undefined} aria-label={onTokenDown ? `${athlete?.name ?? 'Atleta'}, camisa ${athlete?.number ?? ''}. Arraste ou use as setas do teclado.` : undefined} onPointerDown={onTokenDown ? (e) => onTokenDown(e, 'player', p.id, p) : undefined} onKeyDown={onTokenKey ? (e) => onTokenKey(e, 'player', p.id, p) : undefined}>
-        <circle r="44" fill="transparent" /><circle cy="3" r="28" fill="#76523520" /><circle r="27" fill="#e88a32" stroke="#fff9ec" strokeWidth="4" /><text y="7" textAnchor="middle" fill="#172638" fontFamily="Arial, sans-serif" fontSize="21" fontWeight="800">{athlete?.number ?? '?'}</text>
+        <circle r="44" fill="transparent" /><circle cy="3" r="28" fill="#76523520" /><circle r="27" fill="#e88a32" stroke="#fff9ec" strokeWidth="4" /><text y="7" textAnchor="middle" fill="#172638" fontFamily="Arial, sans-serif" fontSize="21" fontWeight="800">{athlete?.number ?? '—'}</text>
         {!compact && <text y="49" textAnchor="middle" fill="#4f402e" fontFamily="Arial, sans-serif" fontSize="17" fontWeight="600" pointerEvents="none">{athlete?.name.split(' ')[0] ?? 'Atleta'}</text>}
       </g>
     })}

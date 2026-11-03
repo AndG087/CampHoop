@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /**
  * Camada de acesso às equipes. Depois vira GET /teams e GET /teams/{id}.
  * Campanha e médias são calculadas das partidas encerradas, as mesmas que
@@ -39,11 +40,15 @@ function summarize(row: (typeof teams)[number]): TeamSummary {
 }
 
 export async function listTeamSummaries(): Promise<TeamSummary[]> {
+  if (remoteApi) return request('/teams/summary')
+
   await delay()
   return teams.map(summarize)
 }
 
 export async function getTeam(id: string): Promise<TeamProfile | null> {
+  if (remoteApi) return request(`/teams/${encodeURIComponent(id)}`)
+
   await delay()
   const row = teams.find((t) => t.id === id)
   if (!row) return null
@@ -64,7 +69,7 @@ export async function getTeam(id: string): Promise<TeamProfile | null> {
     roster: athletes
       .filter((a) => a.teamId === id)
       .map(toSummary)
-      .sort((a, b) => a.number - b.number),
+      .sort((a, b) => (a.number ?? 999) - (b.number ?? 999)),
     recentGames: [...played].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map(finishedGame),
     nextGame: next ? scheduledGame(next) : null,
   }

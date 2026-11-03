@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /**
  * Dados abertos a qualquer pessoa, sem login (issue #19): torneios e jogos.
  * Depois viram GET /public/competitions e GET /public/games no backend.
@@ -7,6 +8,8 @@ import { allCompetitions, allFinishedMatches, allUpcomingMatches, type FinishedM
 import type { Competition, PublicGame } from './types'
 
 export async function listCompetitions(): Promise<Competition[]> {
+  if (remoteApi) return request('/competitions')
+
   await delay()
   return allCompetitions()
 }
@@ -52,6 +55,8 @@ export function finishedGame(m: FinishedMatch): PublicGame {
 }
 
 export async function listPublicGames(): Promise<PublicGames> {
+  if (remoteApi) return request('/public/games')
+
   await delay()
   const scheduled = allUpcomingMatches()
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
