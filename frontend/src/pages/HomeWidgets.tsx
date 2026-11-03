@@ -39,7 +39,7 @@ export function MatchHero({ game }: { game: PublicGame }) {
         <div className="home-matchup__middle">{live ? <strong>{game.homeScore}<i>:</i>{game.awayScore}</strong> : <strong className="home-matchup__vs">VS</strong>}<span>{live ? game.period : `${formatGameDay(game.date, DEMO_TODAY)} · ${game.time}`}</span></div>
         <Link to={`/times/${game.away.id}`} className="home-matchup__team"><Crest team={game.away} large /><span><b>{game.away.club.name}</b><small>{game.away.name}</small></span></Link>
       </div>
-      <div className="home-match-hero__foot"><span>⌖ {game.venue ?? 'Local a definir'}</span><Link to={agendaLink(game.date)}>Ver na agenda <Icon name="arrow" /></Link></div>
+      <div className="home-match-hero__foot"><span>⌖ {game.venue ?? 'Local a definir'}</span><Link to={`/ao-vivo?partida=${game.id}`}>Ver partida <Icon name="arrow" /></Link></div>
     </article>
   )
 }

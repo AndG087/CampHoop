@@ -3,8 +3,10 @@
  * navegador por cima dos dados fictícios. Quando houver backend, isto some:
  * as funções em api/ passam a chamar a API, que guarda no banco.
  */
-import { competitions, competitionTeams, trainingSlots as defaultSlots, upcomingMatches } from './data'
+import { competitions, competitionTeams, trainingSlots as defaultSlots, upcomingMatches, matches, statLines } from './data'
 import type { Competition } from '../types'
+import type { MatchState } from '../liveTypes'
+import { matchPeriod, projectMatch } from '../matchProjection'
 
 const STORAGE_KEY = 'camphoop.demoData.v1'
 
@@ -31,6 +33,7 @@ type DemoData = {
   slots: TrainingSlot[]; changes: TrainingChange[]; matches: UpcomingMatch[]
   competitions: Competition[]
   registrations: { competitionId: string; teamId: string }[]
+  liveMatches: Record<string, MatchState>
 }
 
 function defaults(): DemoData {
@@ -40,6 +43,7 @@ function defaults(): DemoData {
     matches: [],
     competitions: [],
     registrations: [],
+    liveMatches: {},
   }
 }
 
@@ -54,6 +58,14 @@ function load(): DemoData {
 }
 
 let data = load()
+let revision = 0
+const listeners = new Set<() => void>()
+function notify() { revision++; listeners.forEach((listener) => listener()) }
+export function subscribeDemoData(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener) } }
+export const demoRevision = () => revision
+if (typeof window !== 'undefined') window.addEventListener('storage', (event) => {
+  if (event.key === STORAGE_KEY || event.key === null) { data = load(); notify() }
+})
 
 export function demoData(): Readonly<DemoData> {
   return data
@@ -66,6 +78,7 @@ export function changeDemoData(fn: (draft: DemoData) => void) {
   } catch {
     // Sem armazenamento: a alteração vale até recarregar a página.
   }
+  notify()
 }
 
 export function resetDemoData() {
@@ -75,11 +88,34 @@ export function resetDemoData() {
   } catch {
     // ignorado
   }
+  notify()
 }
 
 /** Jogos agendados: os fictícios e os criados na demonstração. */
 export function allUpcomingMatches(): UpcomingMatch[] {
-  return [...upcomingMatches, ...data.matches]
+  return allScheduledMatches().filter((m) => data.liveMatches[m.id]?.status !== 'encerrado').map((m) => {
+    const state = data.liveMatches[m.id]
+    if (!state || state.status === 'agendado') return m
+    const projected = projectMatch(m, state)
+    return { ...m, live: { homeScore: projected.homeScore, awayScore: projected.awayScore, period: matchPeriod(state) } }
+  })
+}
+
+export function allScheduledMatches(): UpcomingMatch[] { return [...upcomingMatches, ...data.matches] }
+
+export type FinishedMatch = (typeof matches)[number] & { time?: string; venue?: string }
+export function allFinishedMatches(): FinishedMatch[] {
+  return [...matches, ...allScheduledMatches().filter((m) => data.liveMatches[m.id]?.status === 'encerrado').map((m) => {
+    const projected = projectMatch(m, data.liveMatches[m.id])
+    return { ...m, homeScore: projected.homeScore, awayScore: projected.awayScore }
+  })]
+}
+
+export type MatchStatRow = [string, string, number, number, number, number | null]
+export function allStatLines(): MatchStatRow[] {
+  return [...statLines, ...allScheduledMatches().filter((m) => data.liveMatches[m.id]?.status === 'encerrado').flatMap((m) =>
+    projectMatch(m, data.liveMatches[m.id]).box.filter((a) => a.played).map((a): MatchStatRow => [m.id, a.athleteId, a.points, a.offensiveRebounds + a.defensiveRebounds, a.assists, null]),
+  )]
 }
 
 export function competitionTeamIds(id: string): string[] {

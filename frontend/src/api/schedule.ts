@@ -10,8 +10,7 @@
 import { canManageTraining, canScheduleFriendly, canScheduleOfficial } from '../auth/access'
 import type { DemoUser } from '../auth/roles'
 import { delay, teamById } from './athletes'
-import { matches } from './mock/data'
-import { allCompetitions, allUpcomingMatches, changeDemoData, competitionTeamIds, demoData, newId } from './mock/store'
+import { allCompetitions, allFinishedMatches, allUpcomingMatches, changeDemoData, competitionTeamIds, demoData, newId } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { ScheduleEvent } from './types'
 
@@ -41,7 +40,7 @@ function eachDay(from: string, to: string): string[] {
 
 /** Jogos (encerrados e agendados) de uma equipe numa data. */
 function teamHasGame(teamId: string, date: string): boolean {
-  return [...matches, ...allUpcomingMatches()].some((m) => m.date === date && (m.homeTeamId === teamId || m.awayTeamId === teamId))
+  return [...allFinishedMatches(), ...allUpcomingMatches()].some((m) => m.date === date && (m.homeTeamId === teamId || m.awayTeamId === teamId))
 }
 
 export async function listSchedule(from: string, to: string, viewer: DemoUser | null): Promise<ScheduleEvent[]> {
@@ -49,7 +48,7 @@ export async function listSchedule(from: string, to: string, viewer: DemoUser | 
   const inRange = (date: string) => date >= from && date <= to
 
   const games: ScheduleEvent[] = [
-    ...matches.filter((m) => inRange(m.date)).map(finishedGame),
+    ...allFinishedMatches().filter((m) => inRange(m.date)).map(finishedGame),
     ...allUpcomingMatches().filter((m) => inRange(m.date)).map(scheduledGame),
   ].map((game) => ({ kind: 'jogo', id: game.id, date: game.date, time: game.time, game }))
 

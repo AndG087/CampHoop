@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage'
 import CompetitionsPage from './pages/CompetitionsPage'
 import CompetitionPage from './pages/CompetitionPage'
 import LoginPage from './pages/LoginPage'
+import LiveMatchPage from './pages/LiveMatchPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import PublicHomePage from './pages/PublicHomePage'
 import SchedulePage from './pages/SchedulePage'
@@ -48,6 +49,7 @@ export default function App() {
       <Route element={<CompetitionShell />}>
         <Route path="campeonatos" element={<CompetitionsPage />} />
         <Route path="campeonatos/:competitionId" element={<CompetitionPage />} />
+        <Route path="ao-vivo" element={<LiveMatchPage />} />
       </Route>
       <Route element={<RequireSession />}>
         <Route element={<AppShell />}>
@@ -56,7 +58,6 @@ export default function App() {
           <Route path="agenda" element={<SchedulePage />} />
           <Route path="atletas" element={<AthletesPage />} />
           <Route path="atletas/:athleteId" element={<AthletePage />} />
-          <Route path="ao-vivo" element={<PlaceholderPage title="Partida ao vivo" subtitle="Placar, ações em tempo real, box score e escalação." stage={8} issue={12} action={{ label: 'Registrar ação', permission: 'match.record' }} />} />
           <Route
             path="quadro-tatico"
             element={

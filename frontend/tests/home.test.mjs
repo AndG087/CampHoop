@@ -105,7 +105,7 @@ test('média geral usa os dois lados das partidas, e amistosos não alteram esta
   assert.equal(summary.performance.length, 6)
   assert.equal(summary.weekGames, 2)
   assert.equal(summary.weekTrainings, 0)
-  assert.equal(summary.activeAthletes, 17)
+  assert.equal(summary.activeAthletes, 22)
   await scheduleGame(DEMO_USERS.tecnico, { competitionId: null, homeTeamId: 'qv-sub17-f', awayTeamId: 'fc-sub17-f', date: '2025-10-30', time: '10:00', venue: 'Quadra teste' })
   const updated = await getHomeSummary(DEMO_USERS.basico, 'todas')
   assert.equal(updated.pointsPerGame, summary.pointsPerGame)

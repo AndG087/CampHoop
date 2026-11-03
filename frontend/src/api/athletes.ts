@@ -5,7 +5,8 @@
  */
 import { canViewAthletePrivate } from '../auth/access'
 import type { DemoUser } from '../auth/roles'
-import { DEMO_TODAY, athletes, clubs, development, matches, statLines, teams } from './mock/data'
+import { DEMO_TODAY, athletes, clubs, development, teams } from './mock/data'
+import { allFinishedMatches, allStatLines } from './mock/store'
 import type { AthleteProfile, AthleteSummary, Club, GameLine, Team } from './types'
 
 /** Atraso curto para a interface já lidar com carregamento, como fará com a API real. */
@@ -32,10 +33,10 @@ function ageOn(birthDate: string, today: string): number {
 export const round1 = (n: number) => Math.round(n * 10) / 10
 
 function gameLines(athleteId: string, teamId: string): GameLine[] {
-  return statLines
+  return allStatLines()
     .filter(([, id]) => id === athleteId)
     .map(([matchId, , points, rebounds, assists, minutes]) => {
-      const match = matches.find((m) => m.id === matchId)!
+      const match = allFinishedMatches().find((m) => m.id === matchId)!
       const home = match.homeTeamId === teamId
       const opponentTeam = teams.find((t) => t.id === (home ? match.awayTeamId : match.homeTeamId))!
       return { matchId, date: match.date, opponent: clubById(opponentTeam.clubId), home, points, rebounds, assists, minutes }

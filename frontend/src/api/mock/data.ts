@@ -48,6 +48,7 @@ export const athletes: AthleteRow[] = [
   { id: 'clara-souza', teamId: 'qv-sub17-f', name: 'Clara Souza', number: 23, position: 'Pivô', birthDate: '2009-11-09', heightCm: 184, memberSince: '2022-05', status: 'ativo' },
   { id: 'nina-lima', teamId: 'qv-sub17-f', name: 'Nina Lima', number: 11, position: 'Ala-pivô', birthDate: '2010-04-30', heightCm: 179, memberSince: '2024-02', status: 'ativo' },
   { id: 'duda-alves', teamId: 'qv-sub17-f', name: 'Duda Alves', number: 3, position: 'Armadora', birthDate: '2010-09-17', heightCm: 163, memberSince: '2025-02', status: 'lesionado' },
+  { id: 'alice-barros', teamId: 'qv-sub17-f', name: 'Alice Barros', number: 15, position: 'Ala', birthDate: '2009-08-18', heightCm: 174, memberSince: '2025-02', status: 'ativo' },
   // Quadra Viva · Sub-15 Masculino
   { id: 'rafael-alves', teamId: 'qv-sub15-m', name: 'Rafael Alves', number: 7, position: 'Armador', birthDate: '2011-05-03', heightCm: 170, memberSince: '2025-10', status: 'ativo' },
   { id: 'gabriel-santos', teamId: 'qv-sub15-m', name: 'Gabriel Santos', number: 10, position: 'Ala', birthDate: '2011-08-22', heightCm: 176, memberSince: '2024-03', status: 'ativo' },
@@ -60,6 +61,10 @@ export const athletes: AthleteRow[] = [
   // Outros clubes
   { id: 'isabela-prado', teamId: 'sa-sub17-f', name: 'Isabela Prado', number: 10, position: 'Armadora', birthDate: '2009-06-11', heightCm: 167, memberSince: '2023-01', status: 'ativo' },
   { id: 'julia-teixeira', teamId: 'sa-sub17-f', name: 'Júlia Teixeira', number: 21, position: 'Pivô', birthDate: '2009-02-03', heightCm: 186, memberSince: '2022-03', status: 'ativo' },
+  { id: 'manuela-dias', teamId: 'sa-sub17-f', name: 'Manuela Dias', number: 5, position: 'Ala', birthDate: '2009-05-12', heightCm: 172, memberSince: '2024-02', status: 'ativo' },
+  { id: 'laura-freitas', teamId: 'sa-sub17-f', name: 'Laura Freitas', number: 9, position: 'Ala-armadora', birthDate: '2010-04-09', heightCm: 169, memberSince: '2024-03', status: 'ativo' },
+  { id: 'maria-lopes', teamId: 'sa-sub17-f', name: 'Maria Lopes', number: 14, position: 'Ala-pivô', birthDate: '2009-10-10', heightCm: 180, memberSince: '2023-03', status: 'ativo' },
+  { id: 'valentina-reis', teamId: 'sa-sub17-f', name: 'Valentina Reis', number: 7, position: 'Armadora', birthDate: '2010-02-15', heightCm: 166, memberSince: '2025-02', status: 'ativo' },
   { id: 'carol-mendes', teamId: 'vb-sub17-f', name: 'Carol Mendes', number: 4, position: 'Ala', birthDate: '2009-12-19', heightCm: 175, memberSince: '2024-01', status: 'ativo' },
   { id: 'pedro-lima', teamId: 'vb-sub15-m', name: 'Pedro Lima', number: 8, position: 'Ala', birthDate: '2011-03-29', heightCm: 178, memberSince: '2023-06', status: 'ativo' },
   { id: 'helena-vieira', teamId: 'fc-sub17-f', name: 'Helena Vieira', number: 13, position: 'Ala-armadora', birthDate: '2009-09-14', heightCm: 172, memberSince: '2022-08', status: 'ativo' },

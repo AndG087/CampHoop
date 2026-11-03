@@ -49,6 +49,7 @@ function LiveGame({ game }: { game: PublicGame }) {
           <small>{game.away.name}</small>
         </div>
       </div>
+      <Link to={`/ao-vivo?partida=${game.id}`} className="public-live-link">Acompanhar partida →</Link>
     </article>
   )
 }
@@ -110,6 +111,7 @@ export default function PublicHomePage() {
                   </div>
                   <TeamLine team={g.home} score={null} />
                   <TeamLine team={g.away} score={null} />
+                  <Link to={`/ao-vivo?partida=${g.id}`} className="public-game-link">Ver partida →</Link>
                 </article>
               ))}
             </div>
@@ -129,6 +131,7 @@ export default function PublicHomePage() {
                     </div>
                     <TeamLine team={g.home} score={g.homeScore} winner={homeWon} />
                     <TeamLine team={g.away} score={g.awayScore} winner={!homeWon} />
+                    <Link to={`/ao-vivo?partida=${g.id}`} className="public-game-link">Ver estatísticas →</Link>
                   </article>
                 )
               })}

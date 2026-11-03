@@ -4,17 +4,17 @@
  * alimentam o perfil dos atletas, para os números baterem entre as telas.
  */
 import { delay, round1, teamById, toSummary } from './athletes'
-import { athletes, matches, teams } from './mock/data'
-import { allCompetitions, allUpcomingMatches, competitionTeamIds } from './mock/store'
+import { athletes, teams } from './mock/data'
+import { allCompetitions, allFinishedMatches, allUpcomingMatches, competitionTeamIds, type FinishedMatch } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { TeamProfile, TeamSummary } from './types'
 
 function teamMatches(teamId: string) {
-  return matches.filter((m) => m.homeTeamId === teamId || m.awayTeamId === teamId)
+  return allFinishedMatches().filter((m) => m.homeTeamId === teamId || m.awayTeamId === teamId)
 }
 
 /** Pontos feitos e sofridos pela equipe numa partida. */
-function scoreFor(m: (typeof matches)[number], teamId: string) {
+function scoreFor(m: FinishedMatch, teamId: string) {
   const home = m.homeTeamId === teamId
   return { scored: home ? m.homeScore : m.awayScore, allowed: home ? m.awayScore : m.homeScore }
 }

@@ -48,7 +48,7 @@ export type GameLine = {
   points: number
   rebounds: number
   assists: number
-  minutes: number
+  minutes: number | null
 }
 
 export type Development = {

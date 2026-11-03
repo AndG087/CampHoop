@@ -1,8 +1,8 @@
 /** Resumo do início; depois vira GET /home, preservando o contrato da tela. */
 import type { DemoUser } from '../auth/roles'
 import { round1, teamById } from './athletes'
-import { DEMO_TODAY, athletes, matches, statLines } from './mock/data'
-import { allCompetitions } from './mock/store'
+import { DEMO_TODAY, athletes } from './mock/data'
+import { allCompetitions, allFinishedMatches, allStatLines } from './mock/store'
 import { finishedGame } from './public'
 import { listSchedule } from './schedule'
 import { listTeamSummaries } from './teams'
@@ -41,12 +41,13 @@ export async function getHomeSummary(viewer: DemoUser, scope: HomeScope, today =
   const teamId = scope === 'minha' ? viewer.teamId : undefined
   const involves = (homeId: string, awayId: string) => !teamId || homeId === teamId || awayId === teamId
   const teams = summaries.filter((s) => !teamId || s.team.id === teamId)
-  const played = matches.filter((g) => g.date <= today && involves(g.homeTeamId, g.awayTeamId))
+  // O encerramento da partida é a fonte da campanha, inclusive em simulações de jogos agendados.
+  const played = allFinishedMatches().filter((g) => involves(g.homeTeamId, g.awayTeamId))
   const visible = schedule.filter((e) => e.kind === 'treino' ? !e.cancelled : involves(e.game.home.id, e.game.away.id))
   const playedIds = new Set(played.map((g) => g.id))
   const roster = athletes.filter((a) => !teamId || a.teamId === teamId)
   const leaders = roster.flatMap((a): HomeLeader[] => {
-    const lines = statLines.filter(([gameId, athleteId]) => athleteId === a.id && playedIds.has(gameId))
+    const lines = allStatLines().filter(([gameId, athleteId]) => athleteId === a.id && playedIds.has(gameId))
     if (!lines.length) return []
     const avg = (index: 2 | 3 | 4) => round1(lines.reduce((sum, l) => sum + l[index], 0) / lines.length)
     return [{ id: a.id, name: a.name, number: a.number, position: a.position, team: teamById(a.teamId), games: lines.length, points: avg(2), rebounds: avg(3), assists: avg(4) }]

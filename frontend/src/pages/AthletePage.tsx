@@ -120,7 +120,7 @@ export default function AthletePage() {
                         <td className="num"><b>{g.points}</b></td>
                         <td className="num">{g.rebounds}</td>
                         <td className="num">{g.assists}</td>
-                        <td className="num">{g.minutes}</td>
+                        <td className="num">{g.minutes ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>

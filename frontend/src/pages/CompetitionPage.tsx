@@ -9,7 +9,7 @@ import { useSession } from '../auth/session'
 import { formatGameDay } from '../format'
 import { EnrollTeamsDialog } from './CompetitionDialogs'
 import { COMPETITION_STATUS, TrophyArt } from './CompetitionsPage'
-import { agendaLink, Crest, Icon } from './HomeWidgets'
+import { Crest, Icon } from './HomeWidgets'
 import { GameDialog } from './ScheduleDialogs'
 import './CompetitionsPage.css'
 
@@ -35,7 +35,7 @@ function GameCard({ game }: { game: PublicGame }) {
     <article className={`competition-game${game.status === 'ao-vivo' ? ' competition-game--live' : ''}`}>
       <div className="competition-game__meta"><b>{formatGameDay(game.date, DEMO_TODAY)}{game.time ? ` · ${game.time}` : ''}</b><span className={`competition-status competition-status--${game.status === 'ao-vivo' ? 'em-andamento' : game.status === 'encerrado' ? 'finalizado' : 'inscricoes'}`}>{game.status === 'ao-vivo' ? 'Ao vivo' : game.status === 'encerrado' ? 'Encerrado' : 'Agendado'}</span></div>
       <div className="competition-game__teams"><Link to={`/times/${game.home.id}`}><Crest team={game.home} /><b>{game.home.club.name}</b></Link><strong>{game.status === 'agendado' ? '×' : `${game.homeScore} – ${game.awayScore}`}</strong><Link to={`/times/${game.away.id}`}><Crest team={game.away} /><b>{game.away.club.name}</b></Link></div>
-      <div className="competition-game__foot"><span>{game.home.name}{game.venue ? ` · ${game.venue}` : ''}{game.period ? ` · ${game.period}` : ''}</span><Link to={agendaLink(game.date)} aria-label={`Abrir agenda de ${game.home.club.name} contra ${game.away.club.name}`}>Agenda ↗</Link></div>
+      <div className="competition-game__foot"><span>{game.home.name}{game.venue ? ` · ${game.venue}` : ''}{game.period ? ` · ${game.period}` : ''}</span><Link to={`/ao-vivo?partida=${game.id}`} aria-label={`Ver partida de ${game.home.club.name} contra ${game.away.club.name}`}>Ver partida ↗</Link></div>
     </article>
   )
 }

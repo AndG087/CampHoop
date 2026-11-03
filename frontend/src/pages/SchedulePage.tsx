@@ -86,6 +86,7 @@ function EventItem({ event, onEdit }: { event: ScheduleEvent; onEdit?: (e: Train
           <span className="event__cat"> · {g.home.name}</span>
         </b>
         {g.venue && <span className="muted">{g.venue}</span>}
+        <Link to={`/ao-vivo?partida=${g.id}`} className="link-button">{g.status === 'ao-vivo' ? 'Acompanhar ao vivo →' : 'Ver partida →'}</Link>
       </div>
       {g.homeScore !== null && (
         <span className="event__score">

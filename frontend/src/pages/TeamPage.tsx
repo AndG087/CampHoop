@@ -154,6 +154,7 @@ export default function TeamPage() {
                 </span>
                 <span className="muted">{next.competition} · {next.venue}</span>
                 {next.status === 'ao-vivo' && <span className="pill pill--live">AO VIVO · {next.homeScore}–{next.awayScore}</span>}
+                <Link to={`/ao-vivo?partida=${next.id}`} className="link-button">Ver partida →</Link>
               </>
             ) : (
               <span className="muted">Nenhum jogo agendado.</span>

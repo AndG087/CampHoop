@@ -3,7 +3,7 @@ import { useSession } from '../auth/session'
 import AppShell, { Brand } from './AppShell'
 import '../pages/PublicHomePage.css'
 
-/** Campeonatos podem ser acompanhados também por visitantes. */
+/** Campeonatos e partidas podem ser acompanhados também por visitantes. */
 export default function CompetitionShell() {
   const { user } = useSession()
   if (user) return <AppShell />

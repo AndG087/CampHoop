@@ -1,8 +1,7 @@
 import { canManageCompetition } from '../auth/access'
 import { roleCan, type DemoUser } from '../auth/roles'
 import { delay, teamById } from './athletes'
-import { matches } from './mock/data'
-import { allCompetitions, allUpcomingMatches, changeDemoData, competitionTeamIds, newId } from './mock/store'
+import { allCompetitions, allFinishedMatches, allUpcomingMatches, changeDemoData, competitionTeamIds, newId } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { Competition, CompetitionDivision, CompetitionProfile, PublicGame, Standing, Team } from './types'
 
@@ -47,7 +46,7 @@ export async function getCompetition(id: string): Promise<CompetitionProfile | n
   if (!competition) return null
   const enrolled = competitionTeamIds(id).map(teamById)
   const games = [
-    ...matches.filter((m) => m.competitionId === id).map(finishedGame),
+    ...allFinishedMatches().filter((m) => m.competitionId === id).map(finishedGame),
     ...allUpcomingMatches().filter((m) => m.competitionId === id).map(scheduledGame),
   ].sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')))
   return {
