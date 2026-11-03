@@ -69,6 +69,7 @@ export type AthleteProfile = AthleteSummary & {
 }
 
 export type CompetitionStatus = 'em-andamento' | 'inscricoes' | 'finalizado'
+export type CompetitionDivision = { category: Category; gender: Gender }
 
 export type Competition = {
   id: string
@@ -78,6 +79,27 @@ export type Competition = {
   categories: string
   teams: number
   note: string
+  divisions: CompetitionDivision[]
+  /** Dono de campeonatos criados na demonstração; os iniciais usam as permissões da sessão. */
+  organizerId: string | null
+}
+
+export type Standing = {
+  team: Team
+  played: number
+  wins: number
+  losses: number
+  points: number
+  pointsFor: number
+  pointsAgainst: number
+  difference: number
+  form: ('V' | 'D')[]
+}
+
+export type CompetitionProfile = Competition & {
+  enrolled: Team[]
+  games: PublicGame[]
+  standings: { division: CompetitionDivision; rows: Standing[] }[]
 }
 
 /** Jogo como aparece para o público: ao vivo, agendado ou encerrado. */

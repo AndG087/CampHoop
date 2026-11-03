@@ -3,7 +3,8 @@
  * navegador por cima dos dados fictícios. Quando houver backend, isto some:
  * as funções em api/ passam a chamar a API, que guarda no banco.
  */
-import { trainingSlots as defaultSlots, upcomingMatches } from './data'
+import { competitions, competitionTeams, trainingSlots as defaultSlots, upcomingMatches } from './data'
+import type { Competition } from '../types'
 
 const STORAGE_KEY = 'camphoop.demoData.v1'
 
@@ -26,13 +27,19 @@ export type UpcomingMatch = {
   live: { homeScore: number; awayScore: number; period: string } | null
 }
 
-type DemoData = { slots: TrainingSlot[]; changes: TrainingChange[]; matches: UpcomingMatch[] }
+type DemoData = {
+  slots: TrainingSlot[]; changes: TrainingChange[]; matches: UpcomingMatch[]
+  competitions: Competition[]
+  registrations: { competitionId: string; teamId: string }[]
+}
 
 function defaults(): DemoData {
   return {
     slots: defaultSlots.map((s) => ({ id: `${s.teamId}-${s.weekday}-${s.time}`, ...s })),
     changes: [],
     matches: [],
+    competitions: [],
+    registrations: [],
   }
 }
 
@@ -73,6 +80,15 @@ export function resetDemoData() {
 /** Jogos agendados: os fictícios e os criados na demonstração. */
 export function allUpcomingMatches(): UpcomingMatch[] {
   return [...upcomingMatches, ...data.matches]
+}
+
+export function competitionTeamIds(id: string): string[] {
+  return [...new Set([...(competitionTeams[id] ?? []), ...data.registrations.filter((r) => r.competitionId === id).map((r) => r.teamId)])]
+}
+
+/** Leitura compartilhada: agenda, equipes, início e páginas públicas usam os mesmos cadastros. */
+export function allCompetitions(): Competition[] {
+  return [...competitions, ...data.competitions].map((c) => ({ ...c, teams: competitionTeamIds(c.id).length }))
 }
 
 export const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`

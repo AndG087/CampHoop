@@ -3,7 +3,7 @@ import { after, beforeEach, test } from 'node:test'
 import { createServer } from 'vite'
 
 // Carrega o mesmo TypeScript da aplicação sem criar uma segunda configuração.
-const server = await createServer({ server: { middlewareMode: true, watch: null }, appType: 'custom' })
+const server = await createServer({ server: { middlewareMode: true, watch: null, ws: false }, appType: 'custom' })
 const { getHomeSummary } = await server.ssrLoadModule('/src/api/home.ts')
 const { DEMO_USERS } = await server.ssrLoadModule('/src/auth/roles.ts')
 const { changeDemoData, resetDemoData } = await server.ssrLoadModule('/src/api/mock/store.ts')

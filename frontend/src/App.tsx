@@ -2,9 +2,12 @@ import { Link, Route, Routes } from 'react-router'
 import { RequirePermission, RequireSession } from './auth/guards'
 import { useSession } from './auth/session'
 import AppShell from './layout/AppShell'
+import CompetitionShell from './layout/CompetitionShell'
 import AthletePage from './pages/AthletePage'
 import AthletesPage from './pages/AthletesPage'
 import HomePage from './pages/HomePage'
+import CompetitionsPage from './pages/CompetitionsPage'
+import CompetitionPage from './pages/CompetitionPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import PublicHomePage from './pages/PublicHomePage'
@@ -42,12 +45,15 @@ export default function App() {
     <Routes>
       <Route index element={<Home />} />
       <Route path="login" element={<LoginPage />} />
+      <Route element={<CompetitionShell />}>
+        <Route path="campeonatos" element={<CompetitionsPage />} />
+        <Route path="campeonatos/:competitionId" element={<CompetitionPage />} />
+      </Route>
       <Route element={<RequireSession />}>
         <Route element={<AppShell />}>
           <Route path="times" element={<TeamsPage />} />
           <Route path="times/:teamId" element={<TeamPage />} />
           <Route path="agenda" element={<SchedulePage />} />
-          <Route path="campeonatos" element={<PlaceholderPage title="Campeonatos" subtitle="Inscrições, classificação e tabela de jogos." stage={7} issue={11} />} />
           <Route path="atletas" element={<AthletesPage />} />
           <Route path="atletas/:athleteId" element={<AthletePage />} />
           <Route path="ao-vivo" element={<PlaceholderPage title="Partida ao vivo" subtitle="Placar, ações em tempo real, box score e escalação." stage={8} issue={12} action={{ label: 'Registrar ação', permission: 'match.record' }} />} />

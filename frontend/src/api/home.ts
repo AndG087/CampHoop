@@ -1,7 +1,8 @@
 /** Resumo do início; depois vira GET /home, preservando o contrato da tela. */
 import type { DemoUser } from '../auth/roles'
 import { round1, teamById } from './athletes'
-import { DEMO_TODAY, athletes, competitions, matches, statLines } from './mock/data'
+import { DEMO_TODAY, athletes, matches, statLines } from './mock/data'
+import { allCompetitions } from './mock/store'
 import { finishedGame } from './public'
 import { listSchedule } from './schedule'
 import { listTeamSummaries } from './teams'
@@ -68,7 +69,7 @@ export async function getHomeSummary(viewer: DemoUser, scope: HomeScope, today =
     upcoming: visible.filter((e) => e.kind === 'treino' || e.game.status === 'agendado').slice(0, 5),
     results: [...played].sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)).slice(0, 5).map(finishedGame),
     leaders,
-    competitions: competitions.filter((c) => competitionIds.has(c.id)),
+    competitions: allCompetitions().filter((c) => competitionIds.has(c.id)),
     performance: performance.slice(-6),
     pointsPerGame: played.length ? round1(performance.reduce((sum, g) => sum + (teamId ? g.scored : (g.scored + g.allowed) / 2), 0) / played.length) : 0,
     pointsAgainst: played.length ? round1(performance.reduce((sum, g) => sum + g.allowed, 0) / played.length) : 0,

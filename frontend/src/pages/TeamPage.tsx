@@ -80,7 +80,7 @@ export default function TeamPage() {
             {team.competitions.length > 0 && (
               <p className="team-hero__comps">
                 {team.competitions.map((c) => (
-                  <Link key={c.id} to={`/times?campeonato=${c.id}`}>{c.name}</Link>
+                  <Link key={c.id} to={`/campeonatos/${c.id}`}>{c.name}</Link>
                 ))}
               </p>
             )}

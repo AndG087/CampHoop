@@ -10,8 +10,8 @@
 import { canManageTraining, canScheduleFriendly, canScheduleOfficial } from '../auth/access'
 import type { DemoUser } from '../auth/roles'
 import { delay, teamById } from './athletes'
-import { competitionTeams, matches } from './mock/data'
-import { allUpcomingMatches, changeDemoData, demoData, newId } from './mock/store'
+import { matches } from './mock/data'
+import { allCompetitions, allUpcomingMatches, changeDemoData, competitionTeamIds, demoData, newId } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { ScheduleEvent } from './types'
 
@@ -162,13 +162,19 @@ export async function scheduleGame(viewer: DemoUser | null, game: NewGame) {
   await delay()
   const teams = [game.homeTeamId, game.awayTeamId]
   if (game.competitionId) {
-    if (!canScheduleOfficial(viewer, game.competitionId)) throw new ScheduleError('Só o organizador do campeonato agenda jogos oficiais.')
-    if (!teams.every((id) => competitionTeams[game.competitionId!]?.includes(id))) throw new ScheduleError('As duas equipes precisam estar inscritas no campeonato.')
+    const competition = allCompetitions().find((c) => c.id === game.competitionId)
+    if (!competition) throw new ScheduleError('Campeonato não encontrado.')
+    if (!canScheduleOfficial(viewer, competition.id, competition.organizerId)) throw new ScheduleError('Só o organizador do campeonato agenda jogos oficiais.')
+    if (competition.status === 'finalizado') throw new ScheduleError('Este campeonato já foi finalizado.')
+    if (!teams.every((id) => competitionTeamIds(competition.id).includes(id))) throw new ScheduleError('As duas equipes precisam estar inscritas no campeonato.')
   } else if (!canScheduleFriendly(viewer, teams)) {
     throw new ScheduleError('O técnico só agenda amistosos da própria equipe.')
   }
   if (game.homeTeamId === game.awayTeamId) throw new ScheduleError('Escolha duas equipes diferentes.')
   if (teamById(game.homeTeamId).category !== teamById(game.awayTeamId).category) throw new ScheduleError('As equipes precisam ser da mesma categoria.')
+  if (teamById(game.homeTeamId).gender !== teamById(game.awayTeamId).gender) throw new ScheduleError('As equipes precisam ser do mesmo gênero.')
+  const parsed = new Date(`${game.date}T00:00:00Z`)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(game.date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== game.date || !/^([01]\d|2[0-3]):[0-5]\d$/.test(game.time) || !game.venue.trim()) throw new ScheduleError('Preencha data, horário e local válidos.')
   const busy = teams.find((id) => teamHasGame(id, game.date))
   if (busy) throw new ScheduleError(`${teamById(busy).club.name} · ${teamById(busy).name} já tem jogo nesse dia.`)
   changeDemoData((d) => d.matches.push({ id: newId('m'), ...game, live: null }))

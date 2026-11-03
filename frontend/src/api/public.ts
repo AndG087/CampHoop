@@ -3,13 +3,13 @@
  * Depois viram GET /public/competitions e GET /public/games no backend.
  */
 import { delay, teamById } from './athletes'
-import { competitions, matches } from './mock/data'
-import { allUpcomingMatches, type UpcomingMatch } from './mock/store'
+import { matches } from './mock/data'
+import { allCompetitions, allUpcomingMatches, type UpcomingMatch } from './mock/store'
 import type { Competition, PublicGame } from './types'
 
 export async function listCompetitions(): Promise<Competition[]> {
   await delay()
-  return competitions
+  return allCompetitions()
 }
 
 export type PublicGames = {
@@ -31,7 +31,7 @@ export function scheduledGame(m: UpcomingMatch): PublicGame {
     awayScore: m.live?.awayScore ?? null,
     period: m.live?.period ?? null,
     venue: m.venue,
-    competition: m.competitionId ? (competitions.find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
+    competition: m.competitionId ? (allCompetitions().find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
   }
 }
 
@@ -48,7 +48,7 @@ export function finishedGame(m: (typeof matches)[number]): PublicGame {
     awayScore: m.awayScore,
     period: null,
     venue: null,
-    competition: null,
+    competition: m.competitionId ? (allCompetitions().find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
   }
 }
 

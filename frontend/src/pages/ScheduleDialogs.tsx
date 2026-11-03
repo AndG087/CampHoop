@@ -16,6 +16,7 @@ import { listTeamSummaries } from '../api/teams'
 import type { ScheduleEvent } from '../api/types'
 import { useApi } from '../api/useApi'
 import type { DemoUser } from '../auth/roles'
+import { canManageCompetition } from '../auth/access'
 import Modal from '../components/Modal'
 
 const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
@@ -236,11 +237,11 @@ export function ExtraTrainingDialog({ user, defaultDate, onClose, onChanged }: B
  * Agendar jogo. Organizador: jogo oficial entre equipes inscritas no campeonato.
  * Técnico: amistoso da própria equipe contra outra da mesma categoria.
  */
-export function GameDialog({ user, kind, defaultDate, onClose, onChanged }: Base & { kind: 'oficial' | 'amistoso'; defaultDate: string }) {
+export function GameDialog({ user, kind, defaultDate, defaultCompetitionId, onClose, onChanged }: Base & { kind: 'oficial' | 'amistoso'; defaultDate: string; defaultCompetitionId?: string }) {
   const teams = useApi(listTeamSummaries, 'teams:summaries')
   const competitions = useApi(listCompetitions, 'public:competitions')
-  const myCompetitions = (competitions.data ?? []).filter((c) => user.competitionIds?.includes(c.id))
-  const [competitionId, setCompetitionId] = useState(user.competitionIds?.[0] ?? '')
+  const myCompetitions = (competitions.data ?? []).filter((c) => c.status !== 'finalizado' && canManageCompetition(user, c))
+  const [competitionId, setCompetitionId] = useState(defaultCompetitionId ?? user.competitionIds?.[0] ?? '')
   const [homeTeamId, setHomeTeamId] = useState('')
   const [awayTeamId, setAwayTeamId] = useState('')
   const [atHome, setAtHome] = useState(true)
@@ -260,16 +261,16 @@ export function GameDialog({ user, kind, defaultDate, onClose, onChanged }: Base
   }
   // Oficial: equipes do campeonato; o visitante tem de ser da mesma categoria do mandante.
   const inCompetition = all.filter((s) => s.competitions.some((c) => c.id === competitionId))
-  const homeCategory = all.find((s) => s.team.id === homeTeamId)?.team.category
-  const awayOptions = inCompetition.filter((s) => s.team.id !== homeTeamId && (!homeCategory || s.team.category === homeCategory))
+  const homeTeam = all.find((s) => s.team.id === homeTeamId)?.team
+  const awayOptions = inCompetition.filter((s) => s.team.id !== homeTeamId && (!homeTeam || (s.team.category === homeTeam.category && s.team.gender === homeTeam.gender)))
   // Amistoso: adversários de outros clubes na mesma categoria da equipe do técnico.
-  const opponents = all.filter((s) => own && s.team.category === own.team.category && s.team.club.id !== own.team.club.id)
+  const opponents = all.filter((s) => own && s.team.category === own.team.category && s.team.gender === own.team.gender && s.team.club.id !== own.team.club.id)
 
   function submit(e: FormEvent) {
     e.preventDefault()
     if (!date || !time || !venue.trim()) return setError('Preencha data, horário e local.')
     if (kind === 'oficial') {
-      if (!homeTeamId || !awayTeamId) return setError('Escolha as duas equipes.')
+      if (!competitionId || !homeTeamId || !awayTeamId) return setError('Escolha o campeonato e as duas equipes.')
       run(() => scheduleGame(user, { competitionId, homeTeamId, awayTeamId, date, time, venue: venue.trim() }))
     } else {
       if (!awayTeamId) return setError('Escolha o adversário.')
@@ -287,12 +288,14 @@ export function GameDialog({ user, kind, defaultDate, onClose, onChanged }: Base
               Campeonato
               <select
                 value={competitionId}
+                disabled={!!defaultCompetitionId}
                 onChange={(e) => {
                   setCompetitionId(e.target.value)
                   setHomeTeamId('')
                   setAwayTeamId('')
                 }}
               >
+                <option value="">Escolha um campeonato…</option>
                 {myCompetitions.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}

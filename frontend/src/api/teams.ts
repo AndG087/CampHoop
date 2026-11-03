@@ -4,8 +4,8 @@
  * alimentam o perfil dos atletas, para os números baterem entre as telas.
  */
 import { delay, round1, teamById, toSummary } from './athletes'
-import { athletes, competitionTeams, competitions, matches, teams } from './mock/data'
-import { allUpcomingMatches } from './mock/store'
+import { athletes, matches, teams } from './mock/data'
+import { allCompetitions, allUpcomingMatches, competitionTeamIds } from './mock/store'
 import { finishedGame, scheduledGame } from './public'
 import type { TeamProfile, TeamSummary } from './types'
 
@@ -32,8 +32,8 @@ function summarize(row: (typeof teams)[number]): TeamSummary {
     games: played.length,
     wins,
     losses: played.length - wins,
-    competitions: competitions
-      .filter((c) => competitionTeams[c.id]?.includes(row.id))
+    competitions: allCompetitions()
+      .filter((c) => competitionTeamIds(c.id).includes(row.id))
       .map(({ id, name, status }) => ({ id, name, status })),
   }
 }

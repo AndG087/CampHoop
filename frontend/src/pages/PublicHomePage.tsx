@@ -86,7 +86,7 @@ export default function PublicHomePage() {
             {[...running, ...finished].map((c) => (
               <article key={c.id} className={`card tournament${c.status === 'finalizado' ? ' tournament--done' : ''}`}>
                 <span className={`pill${c.status === 'finalizado' ? ' pill--muted' : ''}`}>{STATUS_LABEL[c.status]}</span>
-                <h3>{c.name}</h3>
+                <h3><Link to={`/campeonatos/${c.id}`}>{c.name} ↗</Link></h3>
                 <p className="muted">{c.phase} · {c.categories}</p>
                 <div className="tournament__foot">
                   <span>{c.teams} equipes</span>

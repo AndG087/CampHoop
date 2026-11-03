@@ -39,6 +39,10 @@ export function canScheduleFriendly(user: DemoUser | null, teamIds: string[]): b
 }
 
 /** Jogo oficial: só o organizador, nos campeonatos que administra. */
-export function canScheduleOfficial(user: DemoUser | null, competitionId: string): boolean {
-  return !!user && roleCan(user.role, 'match.schedule') && !!user.competitionIds?.includes(competitionId)
+export function canManageCompetition(user: DemoUser | null, competition: { id: string; organizerId: string | null }): boolean {
+  return !!user && roleCan(user.role, 'competition.manage') && (competition.organizerId === user.id || !!user.competitionIds?.includes(competition.id))
+}
+
+export function canScheduleOfficial(user: DemoUser | null, competitionId: string, organizerId: string | null = null): boolean {
+  return !!user && roleCan(user.role, 'match.schedule') && canManageCompetition(user, { id: competitionId, organizerId })
 }
