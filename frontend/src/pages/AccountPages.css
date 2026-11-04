@@ -16,8 +16,6 @@
 .account-success { padding: 14px 17px; border-radius: 8px; border: 1px solid #cdd8c0; background: #edf1e6; color: #47623f !important; font-size: 13px; line-height: 1.8; }
 .account-note { padding: 15px 18px; background: #f2eadc; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; line-height: 1.8; }
 .account-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 12px; }
-.google-button { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); font: 600 13px var(--font-body); }
-.google-button svg { flex: 0 0 20px; }
 .account-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 22px; }
 .account-panel { padding: 25px; min-width: 0; }
 .account-panel h2, .account-panel h3 { margin: 0 0 14px; font-size: 18px; }

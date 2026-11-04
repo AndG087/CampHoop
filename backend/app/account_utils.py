@@ -23,7 +23,7 @@ def rate_limit(db,scope,identity,limit,seconds=3600):
     return True
 
 def require_verified(user):
-    if user.is_demo:raise HTTPException(403,'Use uma conta real para convidar pessoas ou conectar o Google.')
+    if user.is_demo:raise HTTPException(403,'Use uma conta real para convidar pessoas ou gerenciar clubes.')
     if not user.email_verified:raise HTTPException(403,'Confirme seu e-mail antes de continuar.')
 
 def club_owner(db,user,club_id,lock=False):

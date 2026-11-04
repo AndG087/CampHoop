@@ -24,12 +24,15 @@ async function mailLink(email: string, subject: string) {
 }
 async function register(page: Page, email: string, name: string) {
   await page.goto(base + '/cadastro')
+  await expect(page.getByRole('button', { name: /Google|Gmail/ })).toHaveCount(0)
   await page.getByLabel('Seu nome', { exact: true }).fill(name)
   await page.getByLabel('E-mail', { exact: true }).fill(email)
   await page.getByLabel('Senha', { exact: true }).fill(password)
   await page.getByLabel('Confirme a senha', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click()
   await expect(page).toHaveURL(/\/conta\?cadastro=1$/)
+  await expect(page.getByText('Entrada com Google', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Gmail do aplicativo', exact: true })).toHaveCount(0)
   await expect(page.getByText('CONFIRMAÇÃO PENDENTE', { exact: true })).toBeVisible()
   await page.goto(await mailLink(email, 'Confirme'))
   await page.getByRole('button', { name: 'Confirmar meu e-mail', exact: true }).click()

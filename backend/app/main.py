@@ -23,7 +23,6 @@ from .management import router as management_router, team_period, require_period
 from .team_controls import router as controls_router, require_consent
 from .accounts import router as accounts_router
 from .notifications import router as notifications_router
-from .google_oauth import router as google_router
 from .mail_delivery import deliver_pending
 from .account_utils import active_club_id
 
@@ -49,7 +48,6 @@ app.include_router(management_router)
 app.include_router(controls_router)
 app.include_router(accounts_router)
 app.include_router(notifications_router)
-app.include_router(google_router)
 app.add_middleware(CORSMiddleware, allow_origins=list(settings.origins), allow_credentials=True, allow_methods=['GET','POST','PUT','DELETE'], allow_headers=['Content-Type'])
 app.add_middleware(GZipMiddleware,minimum_size=1200,compresslevel=3)
 

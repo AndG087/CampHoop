@@ -9,5 +9,4 @@ pyarrow>=18,<24
 pytest>=8,<10
 websockets>=14,<17
 python-dotenv>=1,<2
-google-auth[requests]>=2.38,<3
 cryptography>=44,<50
