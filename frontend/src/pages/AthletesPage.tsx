@@ -1,15 +1,19 @@
+import { DATA_SEASON, remoteApi } from '../api/client'
+import { AthleteDialog } from './RosterDialogs'
+import { useState } from 'react'
+import LoadMore from '../components/LoadMore'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { listAthletes, listTeams } from '../api/athletes'
 import type { AthleteSummary, Category } from '../api/types'
 import { useApi } from '../api/useApi'
-import { isOwnAthlete } from '../auth/access'
+import { coachesTeam, isOwnAthlete } from '../auth/access'
 import { Can } from '../auth/guards'
 import { useSession } from '../auth/session'
 import Avatar from '../components/Avatar'
 import { STATUS_LABEL, formatAverage } from '../format'
 import './AthletesPage.css'
 
-const CATEGORIES: Category[] = ['Sub-13', 'Sub-15', 'Sub-17']
+const CATEGORIES: Category[] = ['Universitário', 'Sub-13', 'Sub-15', 'Sub-17']
 
 /** Busca sem diferenciar maiúsculas nem acentos: "julia" encontra "Júlia". */
 function normalize(text: string): string {
@@ -17,6 +21,8 @@ function normalize(text: string): string {
 }
 
 export default function AthletesPage() {
+  const [shown, setShown] = useState(50)
+  const [creating, setCreating] = useState(false)
   const { user } = useSession()
   const navigate = useNavigate()
   // Filtros ficam no endereço: voltar do perfil mantém a busca.
@@ -24,16 +30,22 @@ export default function AthletesPage() {
   const query = params.get('busca') ?? ''
   const category = params.get('categoria') ?? ''
   const teamId = params.get('equipe') ?? ''
+  const origin = params.get('origem') ?? ''
 
   const athletes = useApi(listAthletes, 'athletes')
   const teams = useApi(listTeams, 'teams')
 
   function setFilter(key: string, value: string) {
     const next = new URLSearchParams(params)
+    if (key === 'origem' && value === 'proprio') {
+      // Opening the coach's rosters starts from all of their affiliated teams.
+      for (const filter of ['busca', 'categoria', 'equipe']) next.delete(filter)
+    }
     if (value) next.set(key, value)
     else next.delete(key)
     // Equipe de outra categoria não combina com a categoria escolhida.
     if (key === 'categoria') next.delete('equipe')
+    setShown(50)
     setParams(next, { replace: true })
   }
 
@@ -43,20 +55,20 @@ export default function AthletesPage() {
     (a: AthleteSummary) =>
       (!needle || normalize(a.name).includes(needle)) &&
       (!category || a.team.category === category) &&
-      (!teamId || a.team.id === teamId),
+      (!teamId || a.team.id === teamId) && (origin === 'proprio' ? coachesTeam(user, a.team.id) : origin === 'ncaa' ? !!a.imported : true),
   )
-  const hasFilters = !!(query || category || teamId)
+  const hasFilters = !!(query || category || teamId || origin)
 
   return (
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>Atletas</h1>
           <p>Elenco, desenvolvimento e desempenho individual.</p>
         </div>
         <Can permission="athlete.manage">
-          <button type="button" className="btn btn--accent" title="Cadastro de atletas chega com o backend.">
+          <button type="button" className="btn btn--accent" disabled={!remoteApi} onClick={() => setCreating(true)}>
             + Adicionar atleta
           </button>
         </Can>
@@ -101,6 +113,7 @@ export default function AthletesPage() {
         </select>
       </div>
 
+      {remoteApi && <div className="roster-origin-filters" role="group" aria-label="Origem dos atletas">{[['', 'Todos os atletas'], ['proprio', 'Meus elencos'], ['ncaa', 'Importados da NCAA']].filter(([key]) => key !== 'proprio' || user?.role === 'tecnico').map(([key, label]) => <button type="button" className="chip" key={key} aria-pressed={origin === key} onClick={() => setFilter('origem', key)}>{label}</button>)}</div>}
       <div className="card athlete-table">
         {athletes.loading && <p className="table-state">Carregando atletas…</p>}
         {athletes.error && <p className="table-state">Não foi possível carregar os atletas. Recarregue a página.</p>}
@@ -135,7 +148,7 @@ export default function AthletesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visible.map((a) => (
+                    {visible.slice(0, shown).map((a) => (
                       <tr key={a.id} className="athlete-row" onClick={() => navigate(`/atletas/${a.id}`)}>
                         <td>
                           <span className="athlete-cell">
@@ -151,8 +164,8 @@ export default function AthletesPage() {
                           <small className="club-name">{a.team.club.name}</small>
                         </td>
                         <td className="nowrap hide-sm">{a.position}</td>
-                        <td className="num hide-sm">{a.number}</td>
-                        <td className="num">{a.age}</td>
+                        <td className="num hide-sm">{a.number ?? '—'}</td>
+                        <td className="num">{a.age ?? '—'}</td>
                         <td className="num hide-sm">{a.games}</td>
                         <td className="num">
                           <b>{a.games ? formatAverage(a.pointsPerGame) : '–'}</b>
@@ -171,6 +184,8 @@ export default function AthletesPage() {
           </>
         )}
       </div>
+      <LoadMore shown={shown} total={visible.length} onMore={() => setShown((n) => n + 50)} />
+      {creating && <AthleteDialog onClose={() => setCreating(false)} />}
     </>
   )
 }

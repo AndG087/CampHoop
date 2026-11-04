@@ -1,5 +1,8 @@
-import { Link, useParams } from 'react-router'
-import { DEMO_TODAY } from '../api/mock/data'
+import { DATA_SEASON } from '../api/client'
+import { useState } from 'react'
+import { AthleteDialog, TeamDialog, TeamSeasonDialog } from './RosterDialogs'
+import { Link, useLocation, useParams } from 'react-router'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
 import { getTeam } from '../api/teams'
 import type { PublicGame } from '../api/types'
 import { useApi } from '../api/useApi'
@@ -8,6 +11,7 @@ import { useSession } from '../auth/session'
 import Avatar from '../components/Avatar'
 import { formatAverage, formatGameDay, formatShortDate } from '../format'
 import './TeamPage.css'
+import { DeleteRosterDialog } from './TeamControls'
 
 /** Resultado do ponto de vista da equipe: adversário, mando, V/D e placar. */
 function ResultRow({ game, teamId }: { game: PublicGame; teamId: string }) {
@@ -30,7 +34,10 @@ function ResultRow({ game, teamId }: { game: PublicGame; teamId: string }) {
 }
 
 export default function TeamPage() {
+  const [dialog, setDialog] = useState<'edit' | 'athlete' | 'season' | null>(null)
   const { teamId = '' } = useParams()
+  const notice = (useLocation().state as { rosterCopyNotice?: string } | null)?.rosterCopyNotice
+  const [deleting, setDeleting] = useState<'team' | 'season' | null>(null)
   const { user } = useSession()
   const { data: team, loading, error } = useApi(() => getTeam(teamId), `team:${teamId}`)
 
@@ -59,16 +66,17 @@ export default function TeamPage() {
       <Link to="/times" className="back-link">← Times</Link>
       <div className="page-head">
         <div>
-          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · TEMPORADA 2025/26</div>
+          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · {team.team.imported ? 'NCAA' : 'TEMPORADA'} {DATA_SEASON}</div>
           <h1>{team.team.name}</h1>
           <p>{club.name} · {club.city}</p>
         </div>
-        {canEditTeam(user, team.team.id) && (
-          <button type="button" className="btn btn--ghost" title="Edição chega com o backend.">
-            Editar equipe
-          </button>
+        {canEditTeam(user, team.team.id) && !team.team.imported && (
+          <div className="roster-page-actions"><button type="button" className="btn btn--ghost" onClick={() => setDialog('edit')}>Editar equipe</button><button type="button" className="btn btn--ghost" onClick={() => setDeleting('season')}>Excluir temporada vazia</button><button type="button" className="btn btn--ghost" onClick={() => setDeleting('team')}>Excluir equipe vazia</button><button type="button" className="btn btn--ghost" onClick={() => setDialog('season')}>Nova temporada</button><button type="button" className="btn btn--accent" onClick={() => setDialog('athlete')}>+ Adicionar atleta</button></div>
         )}
       </div>
+
+      {notice && <p role="status" className="roster-notice">{notice}</p>}
+      <span className="roster-source">{team.team.imported ? 'IMPORTADO NCAA · SOMENTE LEITURA' : 'CADASTRO PRÓPRIO'} · {DATA_SEASON}</span>
 
       <section className="team-hero">
         <div className="team-hero__id">
@@ -80,7 +88,7 @@ export default function TeamPage() {
             {team.competitions.length > 0 && (
               <p className="team-hero__comps">
                 {team.competitions.map((c) => (
-                  <Link key={c.id} to={`/times?campeonato=${c.id}`}>{c.name}</Link>
+                  <Link key={c.id} to={`/campeonatos/${c.id}`}>{c.name}</Link>
                 ))}
               </p>
             )}
@@ -132,7 +140,7 @@ export default function TeamPage() {
                       <Avatar name={a.name} photoUrl={a.photoUrl} />
                       <span className="roster__name">
                         <b>{a.name}</b>
-                        <small>#{a.number} · {a.position}</small>
+                        <small>#{a.number ?? '—'} · {a.position}</small>
                       </span>
                       <span className="roster__ppg">{a.games ? `${formatAverage(a.pointsPerGame)} PTS/J` : '–'}</span>
                     </Link>
@@ -154,6 +162,7 @@ export default function TeamPage() {
                 </span>
                 <span className="muted">{next.competition} · {next.venue}</span>
                 {next.status === 'ao-vivo' && <span className="pill pill--live">AO VIVO · {next.homeScore}–{next.awayScore}</span>}
+                <Link to={`/ao-vivo?partida=${next.id}`} className="link-button">Ver partida →</Link>
               </>
             ) : (
               <span className="muted">Nenhum jogo agendado.</span>
@@ -174,6 +183,10 @@ export default function TeamPage() {
           </div>
         </section>
       </div>
+      {deleting && <DeleteRosterDialog kind={deleting} id={team.team.id} season={DATA_SEASON} revision={team.team.revision ?? 1} name={team.team.name} onClose={() => setDeleting(null)} />}
+      {dialog === 'edit' && <TeamDialog team={team} onClose={() => setDialog(null)} />}
+      {dialog === 'athlete' && <AthleteDialog teamId={team.team.id} onClose={() => setDialog(null)} />}
+      {dialog === 'season' && <TeamSeasonDialog team={team} onClose={() => setDialog(null)} />}
     </>
   )
 }

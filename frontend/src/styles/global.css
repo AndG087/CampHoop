@@ -249,6 +249,16 @@ a {
   color: var(--on-navy);
 }
 
+/* Botão com cara de link */
+.link-button {
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
 .pill--warn {
   background: #fde3d6;
   color: #a33a14;
@@ -271,3 +281,15 @@ a {
     animation: none !important;
   }
 }
+
+.data-source { margin: 28px 0 12px; padding-top: 16px; border-top: 1px solid #ded8cc; color: #64706a; font-size: 11px; line-height: 1.7; }
+.data-source a { text-decoration: underline; }
+.load-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; padding: 20px 12px; color: var(--muted); font-size: 12px; }
+.season-selector { display: inline-flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 9px; letter-spacing: 1px; }
+.season-selector select { max-width: 100%; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 7px 9px; border-radius: 6px; font: 11px var(--font-body); }
+.public__actions { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.season .season-selector { margin-top: 10px; width: 100%; }
+.season .season-selector > span { display: none; }
+.season .season-selector select { width: 100%; }
+.topbar__actions > .season-selector { display: none; }
+@media (max-width: 760px) { .topbar__actions > .season-selector { display: inline-flex; } .public__actions { gap: 8px; } .public__actions select { width: 145px; font-size: 10px; } .public__bar-inner { flex-wrap: wrap; padding-block: 12px; } }

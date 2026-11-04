@@ -2,30 +2,37 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { DEMO_USERS, ROLES, ROLE_INFO } from '../auth/roles'
 import { useSession } from '../auth/session'
+import { remoteApi } from '../api/client'
 import './LoginPage.css'
+import { GoogleButton, GOOGLE_MESSAGES } from './AuthPages'
+import { pendingInvitation } from '../api/accounts'
 
 export default function LoginPage() {
   const { user, signIn } = useSession()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const requested = (location.state as { from?: string } | null)?.from
+  const from = requested?.startsWith('/') && !requested.startsWith('//') ? requested : pendingInvitation() ? '/convite' : '/'
+  const googleError = GOOGLE_MESSAGES[new URLSearchParams(location.search).get('google') ?? '']
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   if (user) return <Navigate to={from} replace />
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password) {
       setError('Preencha o e-mail e a senha.')
       return
     }
-    if (!signIn(email, password)) {
-      setError('E-mail não encontrado. Use uma das contas de demonstração abaixo.')
-      return
-    }
-    navigate(from, { replace: true })
+    setBusy(true)
+    try {
+      if (!await signIn(email, password)) { setError('E-mail ou senha inválidos.'); return }
+      navigate(from, { replace: true })
+    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível entrar.') }
+    finally { setBusy(false) }
   }
 
   return (
@@ -43,7 +50,7 @@ export default function LoginPage() {
           <h1>O jogo cresce com você.</h1>
           <p>Um espaço para equipes, atletas e comunidades viverem o basquete com mais dados, conexão e propósito.</p>
         </div>
-        <small className="login__legal">© 2025 CampHoop · Protótipo demonstrativo</small>
+        <small className="login__legal">CampHoop · Ambiente de desenvolvimento</small>
       </div>
 
       <div className="login__box">
@@ -61,11 +68,14 @@ export default function LoginPage() {
             <input type="password" autoComplete="current-password" placeholder="Sua senha" value={password} onChange={(e) => { setPassword(e.target.value); setError('') }} />
           </label>
           {error && <p className="login__error" role="alert">{error}</p>}
-          <button type="submit" className="btn btn--accent login__submit">Entrar →</button>
+          {googleError && <p className="login__error" role="alert">{googleError}</p>}
+          {new URLSearchParams(location.search).get('senha') === 'alterada' && <p className="account-success" role="status">Senha alterada. Entre com sua nova senha.</p>}
+          <button type="submit" disabled={busy} className="btn btn--accent login__submit">{busy ? 'Entrando…' : 'Entrar →'}</button>
+          {remoteApi && <><div className="account-links"><Link to="/recuperar-senha">Esqueci minha senha</Link><Link to="/cadastro">Criar conta</Link></div><GoogleButton disabled={busy} /></>}
 
           <details className="demo-accounts">
-            <summary>Contas de demonstração</summary>
-            <p>Não há login real ainda: qualquer senha funciona.</p>
+            <summary>Contas de teste</summary>
+            <p>{remoteApi ? 'Contas locais de teste. Solicite a senha ao administrador deste ambiente.' : 'Modo de demonstração: qualquer senha preenchida funciona.'}</p>
             <ul>
               {ROLES.map((role) => (
                 <li key={role}>

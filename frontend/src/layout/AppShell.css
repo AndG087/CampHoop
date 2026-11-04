@@ -72,6 +72,10 @@
 .sidebar__nav {
   display: grid;
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex-shrink: 1;
 }
 
 .sidebar__link {
@@ -110,6 +114,7 @@
 
 .sidebar__bottom {
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .season {

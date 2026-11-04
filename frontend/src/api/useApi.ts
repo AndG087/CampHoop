@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { remoteApi, subscribeApi, apiRevision } from './client'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { demoRevision, subscribeDemoData } from './mock/store'
 
 type ApiState<T> = { data: T | undefined; loading: boolean; error: Error | null }
 
@@ -7,6 +9,7 @@ type ApiState<T> = { data: T | undefined; loading: boolean; error: Error | null 
  * `key` identifica a consulta: quando muda, os dados são buscados de novo.
  */
 export function useApi<T>(load: () => Promise<T>, key: string): ApiState<T> {
+  const revision = useSyncExternalStore(remoteApi ? subscribeApi : subscribeDemoData, remoteApi ? apiRevision : demoRevision, demoRevision)
   const [state, setState] = useState<ApiState<T>>({ data: undefined, loading: true, error: null })
 
   useEffect(() => {
@@ -20,7 +23,7 @@ export function useApi<T>(load: () => Promise<T>, key: string): ApiState<T> {
       active = false
     }
     // `load` muda a cada render; a consulta é identificada por `key`.
-  }, [key])
+  }, [key, revision])
 
   return state
 }

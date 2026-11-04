@@ -3,7 +3,7 @@
  * (clubes, equipes, atletas, partidas, linhas de estatística).
  * Todas as telas leem daqui pela camada api/, nunca direto.
  */
-import type { AthleteStatus, Category, Development, Gender } from '../types'
+import type { AthleteStatus, Category, Competition, Development, Gender } from '../types'
 
 /** "Hoje" da demonstração: mantém idades e datas coerentes com a temporada 2025/26. */
 export const DEMO_TODAY = '2025-10-29'
@@ -48,6 +48,7 @@ export const athletes: AthleteRow[] = [
   { id: 'clara-souza', teamId: 'qv-sub17-f', name: 'Clara Souza', number: 23, position: 'Pivô', birthDate: '2009-11-09', heightCm: 184, memberSince: '2022-05', status: 'ativo' },
   { id: 'nina-lima', teamId: 'qv-sub17-f', name: 'Nina Lima', number: 11, position: 'Ala-pivô', birthDate: '2010-04-30', heightCm: 179, memberSince: '2024-02', status: 'ativo' },
   { id: 'duda-alves', teamId: 'qv-sub17-f', name: 'Duda Alves', number: 3, position: 'Armadora', birthDate: '2010-09-17', heightCm: 163, memberSince: '2025-02', status: 'lesionado' },
+  { id: 'alice-barros', teamId: 'qv-sub17-f', name: 'Alice Barros', number: 15, position: 'Ala', birthDate: '2009-08-18', heightCm: 174, memberSince: '2025-02', status: 'ativo' },
   // Quadra Viva · Sub-15 Masculino
   { id: 'rafael-alves', teamId: 'qv-sub15-m', name: 'Rafael Alves', number: 7, position: 'Armador', birthDate: '2011-05-03', heightCm: 170, memberSince: '2025-10', status: 'ativo' },
   { id: 'gabriel-santos', teamId: 'qv-sub15-m', name: 'Gabriel Santos', number: 10, position: 'Ala', birthDate: '2011-08-22', heightCm: 176, memberSince: '2024-03', status: 'ativo' },
@@ -60,23 +61,27 @@ export const athletes: AthleteRow[] = [
   // Outros clubes
   { id: 'isabela-prado', teamId: 'sa-sub17-f', name: 'Isabela Prado', number: 10, position: 'Armadora', birthDate: '2009-06-11', heightCm: 167, memberSince: '2023-01', status: 'ativo' },
   { id: 'julia-teixeira', teamId: 'sa-sub17-f', name: 'Júlia Teixeira', number: 21, position: 'Pivô', birthDate: '2009-02-03', heightCm: 186, memberSince: '2022-03', status: 'ativo' },
+  { id: 'manuela-dias', teamId: 'sa-sub17-f', name: 'Manuela Dias', number: 5, position: 'Ala', birthDate: '2009-05-12', heightCm: 172, memberSince: '2024-02', status: 'ativo' },
+  { id: 'laura-freitas', teamId: 'sa-sub17-f', name: 'Laura Freitas', number: 9, position: 'Ala-armadora', birthDate: '2010-04-09', heightCm: 169, memberSince: '2024-03', status: 'ativo' },
+  { id: 'maria-lopes', teamId: 'sa-sub17-f', name: 'Maria Lopes', number: 14, position: 'Ala-pivô', birthDate: '2009-10-10', heightCm: 180, memberSince: '2023-03', status: 'ativo' },
+  { id: 'valentina-reis', teamId: 'sa-sub17-f', name: 'Valentina Reis', number: 7, position: 'Armadora', birthDate: '2010-02-15', heightCm: 166, memberSince: '2025-02', status: 'ativo' },
   { id: 'carol-mendes', teamId: 'vb-sub17-f', name: 'Carol Mendes', number: 4, position: 'Ala', birthDate: '2009-12-19', heightCm: 175, memberSince: '2024-01', status: 'ativo' },
   { id: 'pedro-lima', teamId: 'vb-sub15-m', name: 'Pedro Lima', number: 8, position: 'Ala', birthDate: '2011-03-29', heightCm: 178, memberSince: '2023-06', status: 'ativo' },
   { id: 'helena-vieira', teamId: 'fc-sub17-f', name: 'Helena Vieira', number: 13, position: 'Ala-armadora', birthDate: '2009-09-14', heightCm: 172, memberSince: '2022-08', status: 'ativo' },
   { id: 'davi-campos', teamId: 'fc-sub13-x', name: 'Davi Campos', number: 11, position: 'Armador', birthDate: '2013-07-08', heightCm: 154, memberSince: '2024-04', status: 'ativo' },
 ]
 
-type MatchRow = { id: string; date: string; homeTeamId: string; awayTeamId: string; homeScore: number; awayScore: number }
+type MatchRow = { id: string; date: string; competitionId: string | null; homeTeamId: string; awayTeamId: string; homeScore: number; awayScore: number }
 
 export const matches: MatchRow[] = [
-  { id: 'm-100', date: '2025-09-28', homeTeamId: 'sa-sub17-f', awayTeamId: 'qv-sub17-f', homeScore: 58, awayScore: 62 },
-  { id: 'm-101', date: '2025-10-12', homeTeamId: 'qv-sub17-f', awayTeamId: 'sa-sub17-f', homeScore: 68, awayScore: 54 },
-  { id: 'm-102', date: '2025-10-19', homeTeamId: 'vb-sub17-f', awayTeamId: 'qv-sub17-f', homeScore: 48, awayScore: 59 },
-  { id: 'm-103', date: '2025-10-26', homeTeamId: 'qv-sub17-f', awayTeamId: 'fc-sub17-f', homeScore: 51, awayScore: 55 },
-  { id: 'm-201', date: '2025-10-10', homeTeamId: 'qv-sub15-m', awayTeamId: 'vb-sub15-m', homeScore: 54, awayScore: 49 },
-  { id: 'm-202', date: '2025-10-24', homeTeamId: 'vb-sub15-m', awayTeamId: 'qv-sub15-m', homeScore: 61, awayScore: 57 },
-  { id: 'm-301', date: '2025-10-18', homeTeamId: 'qv-sub13-x', awayTeamId: 'fc-sub13-x', homeScore: 38, awayScore: 31 },
-  { id: 'm-302', date: '2025-10-25', homeTeamId: 'fc-sub13-x', awayTeamId: 'qv-sub13-x', homeScore: 35, awayScore: 40 },
+  { id: 'm-100', date: '2025-09-28', competitionId: 'liga-escolar-sp', homeTeamId: 'sa-sub17-f', awayTeamId: 'qv-sub17-f', homeScore: 58, awayScore: 62 },
+  { id: 'm-101', date: '2025-10-12', competitionId: 'liga-escolar-sp', homeTeamId: 'qv-sub17-f', awayTeamId: 'sa-sub17-f', homeScore: 68, awayScore: 54 },
+  { id: 'm-102', date: '2025-10-19', competitionId: 'liga-escolar-sp', homeTeamId: 'vb-sub17-f', awayTeamId: 'qv-sub17-f', homeScore: 48, awayScore: 59 },
+  { id: 'm-103', date: '2025-10-26', competitionId: 'liga-escolar-sp', homeTeamId: 'qv-sub17-f', awayTeamId: 'fc-sub17-f', homeScore: 51, awayScore: 55 },
+  { id: 'm-201', date: '2025-10-10', competitionId: 'liga-escolar-sp', homeTeamId: 'qv-sub15-m', awayTeamId: 'vb-sub15-m', homeScore: 54, awayScore: 49 },
+  { id: 'm-202', date: '2025-10-24', competitionId: 'liga-escolar-sp', homeTeamId: 'vb-sub15-m', awayTeamId: 'qv-sub15-m', homeScore: 61, awayScore: 57 },
+  { id: 'm-301', date: '2025-10-18', competitionId: 'liga-escolar-sp', homeTeamId: 'qv-sub13-x', awayTeamId: 'fc-sub13-x', homeScore: 38, awayScore: 31 },
+  { id: 'm-302', date: '2025-10-25', competitionId: 'liga-escolar-sp', homeTeamId: 'fc-sub13-x', awayTeamId: 'qv-sub13-x', homeScore: 35, awayScore: 40 },
 ]
 
 /** [partida, atleta, pontos, rebotes, assistências, minutos] */
@@ -113,10 +118,10 @@ export const development: Record<string, Development> = {
 }
 
 /** Campeonatos (página pública e, depois, etapa 7). */
-export const competitions = [
-  { id: 'liga-escolar-sp', name: 'Liga Escolar SP', status: 'em-andamento' as const, phase: 'Fase de grupos', categories: 'Sub-13 a Sub-17', teams: 12, note: 'Até 18 de dezembro' },
-  { id: 'copa-base-paulista', name: 'Copa Base Paulista', status: 'inscricoes' as const, phase: 'Inscrições abertas', categories: 'Sub-15 e Sub-17', teams: 8, note: 'Inscrições até 5 de novembro' },
-  { id: 'circuito-metropolitano', name: 'Circuito Metropolitano', status: 'finalizado' as const, phase: 'Encerrado', categories: 'Sub-17 Feminino', teams: 16, note: 'Campeã: Quadra Viva' },
+export const competitions: Competition[] = [
+  { id: 'liga-escolar-sp', name: 'Liga Escolar SP', status: 'em-andamento', phase: 'Fase de grupos', categories: 'Sub-13 a Sub-17', teams: 8, note: 'Até 18 de dezembro', organizerId: null, divisions: [{ category: 'Sub-17', gender: 'Feminino' }, { category: 'Sub-15', gender: 'Masculino' }, { category: 'Sub-13', gender: 'Misto' }] },
+  { id: 'copa-base-paulista', name: 'Copa Base Paulista', status: 'inscricoes', phase: 'Inscrições abertas', categories: 'Sub-15 e Sub-17', teams: 4, note: 'Inscrições até 5 de novembro', organizerId: null, divisions: [{ category: 'Sub-17', gender: 'Feminino' }, { category: 'Sub-15', gender: 'Masculino' }] },
+  { id: 'circuito-metropolitano', name: 'Circuito Metropolitano', status: 'finalizado', phase: 'Encerrado', categories: 'Sub-17 Feminino', teams: 4, note: 'Campeã: Quadra Viva', organizerId: null, divisions: [{ category: 'Sub-17', gender: 'Feminino' }] },
 ]
 
 /** Jogos de hoje e dos próximos dias. O placar ao vivo virá do estatístico (etapa 8). */

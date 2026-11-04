@@ -1,13 +1,27 @@
+import { calendarFocusDate } from '../api/client'
+import { remoteApi } from '../api/client'
+import { DATA_SEASON } from '../api/client'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { DEMO_TODAY } from '../api/mock/data'
+import { CURRENT_DATE as DEMO_TODAY } from '../api/client'
+import { resetDemoData } from '../api/mock/store'
 import { listSchedule } from '../api/schedule'
 import type { ScheduleEvent } from '../api/types'
 import { useApi } from '../api/useApi'
+import { canManageTraining } from '../auth/access'
 import { Can } from '../auth/guards'
 import type { DemoUser } from '../auth/roles'
 import { useSession } from '../auth/session'
 import { formatGameDay } from '../format'
+import { ExtraTrainingDialog, GameDialog, TrainingDialog, TrainingPlanDialog } from './ScheduleDialogs'
 import './SchedulePage.css'
+
+type TrainingEvent = Extract<ScheduleEvent, { kind: 'treino' }>
+type Dialog =
+  | { type: 'plano' }
+  | { type: 'treino'; event: TrainingEvent }
+  | { type: 'avulso' }
+  | { type: 'jogo'; kind: 'oficial' | 'amistoso' }
 
 const WEEKDAYS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM']
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -38,23 +52,33 @@ function applyFilters(events: ScheduleEvent[], type: string, mine: boolean, user
   return events.filter((e) => (!type || e.kind === type) && (!mine || !user?.teamId || involvesTeam(e, user.teamId)))
 }
 
-function EventItem({ event }: { event: ScheduleEvent }) {
+/** `onEdit` existe quando quem vê pode alterar o treino (técnico da equipe). */
+function EventItem({ event, onEdit }: { event: ScheduleEvent; onEdit?: (e: TrainingEvent) => void }) {
   if (event.kind === 'treino') {
+    const tag = event.cancelled ? 'TREINO CANCELADO' : event.slotId === null ? 'TREINO AVULSO' : 'TREINO'
     return (
-      <article className="event event--treino">
+      <article className={`event event--treino${event.cancelled ? ' event--cancelled' : ''}`}>
         <span className="event__time">{event.time}</span>
         <div className="event__body">
-          <span className="event__tag">TREINO</span>
+          <span className="event__tag">{tag}</span>
           <b>
             <Link to={`/times/${event.team.id}`}>{event.team.club.name} · {event.team.name}</Link>
           </b>
-          <span className="muted">{event.venue}</span>
+          <span className="muted">
+            {event.venue}
+            {event.note && ` · ${event.note}`}
+          </span>
         </div>
+        {onEdit && (
+          <button type="button" className="btn btn--ghost event__edit" onClick={() => onEdit(event)}>
+            Alterar
+          </button>
+        )}
       </article>
     )
   }
   const g = event.game
-  const tag = g.status === 'ao-vivo' ? 'AO VIVO' : g.status === 'encerrado' ? 'ENCERRADO' : 'JOGO'
+  const tag = g.status === 'ao-vivo' ? 'AO VIVO' : g.status === 'encerrado' ? 'ENCERRADO' : g.status === 'adiado' ? 'ADIADO' : 'JOGO'
   return (
     <article className={`event event--jogo${g.status === 'ao-vivo' ? ' event--live' : ''}`}>
       <span className="event__time">{g.time ?? '—'}</span>
@@ -65,6 +89,7 @@ function EventItem({ event }: { event: ScheduleEvent }) {
           <span className="event__cat"> · {g.home.name}</span>
         </b>
         {g.venue && <span className="muted">{g.venue}</span>}
+        <Link to={`/ao-vivo?partida=${g.id}`} className="link-button">{g.status === 'ao-vivo' ? 'Acompanhar ao vivo →' : 'Ver partida →'}</Link>
       </div>
       {g.homeScore !== null && (
         <span className="event__score">
@@ -78,15 +103,22 @@ function EventItem({ event }: { event: ScheduleEvent }) {
 export default function SchedulePage() {
   const { user } = useSession()
   const [params, setParams] = useSearchParams()
-  const month = params.get('mes') ?? DEMO_TODAY.slice(0, 7)
+  const focusDate = calendarFocusDate()
+  const month = params.get('mes') ?? focusDate.slice(0, 7)
   const view = params.get('ver') === 'lista' ? 'lista' : 'calendario'
   const type = params.get('tipo') ?? ''
   const mine = params.get('equipe') === 'minha'
   const lastDay = daysInMonth(month)
-  const selectedDay = params.get('dia') ?? (DEMO_TODAY.startsWith(month) ? DEMO_TODAY : `${month}-01`)
+  const selectedDay = params.get('dia') ?? (focusDate.startsWith(month) ? focusDate : `${month}-01`)
 
-  const monthEvents = useApi(() => listSchedule(`${month}-01`, `${month}-${pad(lastDay)}`, user), `schedule:${month}:${user?.id}`)
-  const upcoming = useApi(() => listSchedule(DEMO_TODAY, addDays(DEMO_TODAY, 30), user), `schedule:next:${user?.id}`)
+  // Muda a cada alteração para recarregar a agenda.
+  const [version, setVersion] = useState(0)
+  const [dialog, setDialog] = useState<Dialog | null>(null)
+  const monthEvents = useApi(() => listSchedule(`${month}-01`, `${month}-${pad(lastDay)}`, user), `schedule:${month}:${user?.id}:${version}`)
+  const upcoming = useApi(() => listSchedule(DEMO_TODAY, addDays(DEMO_TODAY, 30), user), `schedule:next:${user?.id}:${version}`)
+  const refresh = () => setVersion((v) => v + 1)
+  const canTrain = !!user?.teamId && canManageTraining(user, user.teamId)
+  const editTraining = canTrain ? (event: TrainingEvent) => setDialog({ type: 'treino', event }) : undefined
 
   function setParam(key: string, value: string) {
     const next = new URLSearchParams(params)
@@ -115,15 +147,23 @@ export default function SchedulePage() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>Agenda</h1>
           <p>{user?.teamId ? 'Jogos de todas as equipes e os treinos da sua.' : 'Jogos de todas as equipes.'}</p>
         </div>
-        <Can permission="schedule.manage">
-          <button type="button" className="btn btn--accent" title="Agendamento chega com o backend.">
-            + Agendar jogo
-          </button>
-        </Can>
+        <div className="schedule-actions">
+          {canTrain && (
+            <>
+              <button type="button" className="btn btn--ghost" onClick={() => setDialog({ type: 'plano' })}>Horário de treinos</button>
+              <Can permission="friendly.schedule">
+                <button type="button" className="btn btn--accent" onClick={() => setDialog({ type: 'jogo', kind: 'amistoso' })}>+ Agendar amistoso</button>
+              </Can>
+            </>
+          )}
+          <Can permission="match.schedule">
+            <button type="button" className="btn btn--accent" onClick={() => setDialog({ type: 'jogo', kind: 'oficial' })}>+ Agendar jogo</button>
+          </Can>
+        </div>
       </div>
 
       <div className="schedule-controls">
@@ -171,7 +211,7 @@ export default function SchedulePage() {
                   <button key={date} type="button" className={classes} onClick={() => setParam('dia', date)} aria-label={`${Number(date.slice(8))} de ${MONTHS[m - 1]}: ${dayEvents.length} compromissos`}>
                     <span className="day__num">{Number(date.slice(8))}</span>
                     {dayEvents.slice(0, 2).map((e) => (
-                      <span key={e.id} className={`day__event day__event--${e.kind}${e.kind === 'jogo' && e.game.status === 'ao-vivo' ? ' day__event--live' : ''}`}>
+                      <span key={e.id} className={`day__event day__event--${e.kind}${e.kind === 'jogo' && e.game.status === 'ao-vivo' ? ' day__event--live' : ''}${e.kind === 'treino' && e.cancelled ? ' day__event--cancelled' : ''}`}>
                         {e.kind === 'treino' ? `${e.time} · Treino` : `${e.time ?? ''} ${e.game.home.club.shortName}×${e.game.away.club.shortName}`.trim()}
                       </span>
                     ))}
@@ -189,7 +229,12 @@ export default function SchedulePage() {
               {selectedEvents.length === 0 ? (
                 <p className="muted">Nenhum compromisso neste dia.</p>
               ) : (
-                selectedEvents.map((e) => <EventItem key={e.id} event={e} />)
+                selectedEvents.map((e) => <EventItem key={e.id} event={e} onEdit={editTraining} />)
+              )}
+              {canTrain && (
+                <button type="button" className="link-button day-detail__add" onClick={() => setDialog({ type: 'avulso' })}>
+                  + Treino avulso neste dia
+                </button>
               )}
             </div>
           </>
@@ -201,7 +246,7 @@ export default function SchedulePage() {
             {[...byDay.entries()].map(([date, list]) => (
               <section key={date} className="schedule-list__day">
                 <h3>{formatGameDay(date, DEMO_TODAY)}</h3>
-                {list.map((e) => <EventItem key={e.id} event={e} />)}
+                {list.map((e) => <EventItem key={e.id} event={e} onEdit={editTraining} />)}
               </section>
             ))}
           </div>
@@ -215,10 +260,31 @@ export default function SchedulePage() {
         {nextEvents.map((e) => (
           <div key={e.id} className="next-item">
             <span className="next-item__day">{formatGameDay(e.date, DEMO_TODAY)}</span>
-            <EventItem event={e} />
+            <EventItem event={e} onEdit={editTraining} />
           </div>
         ))}
       </div>
+
+      {!remoteApi && (canTrain || user?.role === 'organizador') && (
+        <p className="demo-reset muted">
+          As alterações ficam salvas só neste navegador (demonstração).{' '}
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => {
+              resetDemoData()
+              refresh()
+            }}
+          >
+            Restaurar dados originais
+          </button>
+        </p>
+      )}
+
+      {user && dialog?.type === 'plano' && <TrainingPlanDialog user={user} onClose={() => setDialog(null)} onChanged={refresh} />}
+      {user && dialog?.type === 'treino' && <TrainingDialog user={user} event={dialog.event} onClose={() => setDialog(null)} onChanged={refresh} />}
+      {user && dialog?.type === 'avulso' && <ExtraTrainingDialog user={user} defaultDate={selectedDay} onClose={() => setDialog(null)} onChanged={refresh} />}
+      {user && dialog?.type === 'jogo' && <GameDialog user={user} kind={dialog.kind} defaultDate={selectedDay} onClose={() => setDialog(null)} onChanged={refresh} />}
     </>
   )
 }

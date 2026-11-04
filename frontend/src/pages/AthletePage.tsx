@@ -1,3 +1,6 @@
+import { DATA_SEASON } from '../api/client'
+import { useState } from 'react'
+import { AthleteDialog } from './RosterDialogs'
 import { Link, useParams } from 'react-router'
 import { getAthlete } from '../api/athletes'
 import { useApi } from '../api/useApi'
@@ -6,6 +9,7 @@ import { useSession } from '../auth/session'
 import Avatar from '../components/Avatar'
 import { STATUS_LABEL, formatAverage, formatDate, formatHeight, formatMonthYear, formatShortDate } from '../format'
 import './AthletePage.css'
+import { DeleteRosterDialog } from './TeamControls'
 
 function LockNote({ own }: { own: boolean }) {
   return (
@@ -16,6 +20,8 @@ function LockNote({ own }: { own: boolean }) {
 }
 
 export default function AthletePage() {
+  const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const { athleteId = '' } = useParams()
   const { user } = useSession()
   const { data: athlete, loading, error } = useApi(() => getAthlete(athleteId, user), `athlete:${athleteId}:${user?.id}`)
@@ -48,30 +54,32 @@ export default function AthletePage() {
           <div className="eyebrow">{own ? 'SEU PERFIL' : 'PERFIL DE ATLETA'}</div>
           <h1>{athlete.name}</h1>
           <p>
-            {athlete.team.club.name} · {athlete.team.name} · #{athlete.number}
+            {athlete.team.club.name} · {athlete.team.name} · #{athlete.number ?? '—'}
           </p>
         </div>
-        {canEditAthlete(user, ref) && (
-          <button type="button" className="btn btn--ghost" title="Edição chega com o backend.">
+        {canEditAthlete(user, ref) && !athlete.imported && (
+          <div className="roster-page-actions"><button type="button" className="btn btn--ghost" onClick={() => setEditing(true)}>
             Editar perfil
-          </button>
+          </button><button type="button" className="btn btn--ghost" onClick={() => setDeleting(true)}>Excluir vínculo sem histórico</button></div>
         )}
       </div>
+
+      <span className="roster-source">{athlete.imported ? 'IMPORTADO NCAA · SOMENTE LEITURA' : 'CADASTRO PRÓPRIO'} · {athlete.season ?? DATA_SEASON}</span>
 
       <div className="athlete-layout">
         <aside className="card athlete-card">
           <Avatar name={athlete.name} photoUrl={athlete.photoUrl} size="lg" />
           <h2>{athlete.name}</h2>
-          <p className="muted">{athlete.position} · #{athlete.number}</p>
+          <p className="muted">{athlete.position} · #{athlete.number ?? '—'}</p>
           <span className={`pill${statusClass}`}>{STATUS_LABEL[athlete.status]}</span>
           <dl className="facts">
-            <div><dt>Idade</dt><dd>{athlete.age} anos</dd></div>
+            <div><dt>Idade</dt><dd>{athlete.age === null ? 'Não informada' : `${athlete.age} anos`}</dd></div>
             <div><dt>Altura</dt><dd>{formatHeight(athlete.heightCm)}</dd></div>
             <div><dt>Equipe</dt><dd><Link to={`/times/${athlete.team.id}`} className="facts__link">{athlete.team.name}</Link></dd></div>
             <div><dt>Clube</dt><dd>{athlete.team.club.name}</dd></div>
             <div><dt>No clube desde</dt><dd>{formatMonthYear(athlete.memberSince)}</dd></div>
             {athlete.private && (
-              <div className="facts__private"><dt>Nascimento 🔒</dt><dd>{formatDate(athlete.private.birthDate)}</dd></div>
+              <div className="facts__private"><dt>Nascimento 🔒</dt><dd>{athlete.private.birthDate ? formatDate(athlete.private.birthDate) : 'Não informada'}</dd></div>
             )}
           </dl>
         </aside>
@@ -92,7 +100,7 @@ export default function AthletePage() {
             </div>
           </div>
           <p className="stat-foot muted">
-            Médias de {athlete.games} {athlete.games === 1 ? 'jogo' : 'jogos'} na temporada 2025/26.
+            Médias de {athlete.games} {athlete.games === 1 ? 'jogo' : 'jogos'} nos jogos registrados. Temporada {athlete.season ?? DATA_SEASON}.
           </p>
 
           <h2 className="section-title">Desempenho recente</h2>
@@ -120,7 +128,7 @@ export default function AthletePage() {
                         <td className="num"><b>{g.points}</b></td>
                         <td className="num">{g.rebounds}</td>
                         <td className="num">{g.assists}</td>
-                        <td className="num">{g.minutes}</td>
+                        <td className="num">{g.minutes ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -153,6 +161,8 @@ export default function AthletePage() {
           </div>
         </>
       )}
+      {deleting && <DeleteRosterDialog kind="athlete" id={athlete.id} season={athlete.season ?? DATA_SEASON} revision={athlete.revision ?? 1} name={athlete.name} onClose={() => setDeleting(false)} />}
+      {editing && <AthleteDialog id={athlete.id} onClose={() => setEditing(false)} />}
     </>
   )
 }

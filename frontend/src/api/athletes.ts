@@ -1,3 +1,4 @@
+import { remoteApi, request } from './client'
 /**
  * Camada de acesso aos atletas. As telas só usam estas funções.
  * Hoje leem dados fictícios; depois viram chamadas ao backend
@@ -5,7 +6,8 @@
  */
 import { canViewAthletePrivate } from '../auth/access'
 import type { DemoUser } from '../auth/roles'
-import { DEMO_TODAY, athletes, clubs, development, matches, statLines, teams } from './mock/data'
+import { DEMO_TODAY, athletes, clubs, development, teams } from './mock/data'
+import { allFinishedMatches, allStatLines } from './mock/store'
 import type { AthleteProfile, AthleteSummary, Club, GameLine, Team } from './types'
 
 /** Atraso curto para a interface já lidar com carregamento, como fará com a API real. */
@@ -32,10 +34,10 @@ function ageOn(birthDate: string, today: string): number {
 export const round1 = (n: number) => Math.round(n * 10) / 10
 
 function gameLines(athleteId: string, teamId: string): GameLine[] {
-  return statLines
+  return allStatLines()
     .filter(([, id]) => id === athleteId)
     .map(([matchId, , points, rebounds, assists, minutes]) => {
-      const match = matches.find((m) => m.id === matchId)!
+      const match = allFinishedMatches().find((m) => m.id === matchId)!
       const home = match.homeTeamId === teamId
       const opponentTeam = teams.find((t) => t.id === (home ? match.awayTeamId : match.homeTeamId))!
       return { matchId, date: match.date, opponent: clubById(opponentTeam.clubId), home, points, rebounds, assists, minutes }
@@ -66,12 +68,16 @@ export function toSummary(row: (typeof athletes)[number]): AthleteSummary {
 }
 
 export async function listAthletes(): Promise<AthleteSummary[]> {
+  if (remoteApi) return request('/athletes')
+
   await delay()
   return athletes.map(toSummary).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
 }
 
 /** Perfil completo. O bloco `private` só vem para quem pode vê-lo, como o backend fará. */
 export async function getAthlete(id: string, viewer: DemoUser | null): Promise<AthleteProfile | null> {
+  if (remoteApi) return request(`/athletes/${encodeURIComponent(id)}`)
+
   await delay()
   const row = athletes.find((a) => a.id === id)
   if (!row) return null
@@ -88,6 +94,8 @@ export async function getAthlete(id: string, viewer: DemoUser | null): Promise<A
 }
 
 export async function listTeams(): Promise<Team[]> {
+  if (remoteApi) return request('/teams')
+
   await delay()
   return teams.map((t) => teamById(t.id))
 }

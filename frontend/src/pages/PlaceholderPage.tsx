@@ -1,3 +1,4 @@
+import { DATA_SEASON } from '../api/client'
 import { Can } from '../auth/guards'
 import type { Permission } from '../auth/roles'
 import './PlaceholderPage.css'
@@ -21,7 +22,7 @@ export default function PlaceholderPage({ title, subtitle, stage, issue, action 
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">CENTRAL DE OPERAÇÕES · 2025/26</div>
+          <div className="eyebrow">CENTRAL DE OPERAÇÕES · {DATA_SEASON}</div>
           <h1>{title}</h1>
           <p>{subtitle}</p>
         </div>

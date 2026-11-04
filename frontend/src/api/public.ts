@@ -1,14 +1,17 @@
+import { remoteApi, request } from './client'
 /**
  * Dados abertos a qualquer pessoa, sem login (issue #19): torneios e jogos.
  * Depois viram GET /public/competitions e GET /public/games no backend.
  */
 import { delay, teamById } from './athletes'
-import { competitions, matches, upcomingMatches } from './mock/data'
+import { allCompetitions, allFinishedMatches, allUpcomingMatches, type FinishedMatch, type UpcomingMatch } from './mock/store'
 import type { Competition, PublicGame } from './types'
 
 export async function listCompetitions(): Promise<Competition[]> {
+  if (remoteApi) return request('/competitions')
+
   await delay()
-  return competitions
+  return allCompetitions()
 }
 
 export type PublicGames = {
@@ -18,7 +21,7 @@ export type PublicGames = {
 }
 
 /** Jogo agendado ou em andamento, no formato público. */
-export function scheduledGame(m: (typeof upcomingMatches)[number]): PublicGame {
+export function scheduledGame(m: UpcomingMatch): PublicGame {
   return {
     id: m.id,
     date: m.date,
@@ -30,34 +33,38 @@ export function scheduledGame(m: (typeof upcomingMatches)[number]): PublicGame {
     awayScore: m.live?.awayScore ?? null,
     period: m.live?.period ?? null,
     venue: m.venue,
-    competition: competitions.find((c) => c.id === m.competitionId)?.name ?? null,
+    competition: m.competitionId ? (allCompetitions().find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
   }
 }
 
 /** Jogo encerrado, no formato público. */
-export function finishedGame(m: (typeof matches)[number]): PublicGame {
+export function finishedGame(m: FinishedMatch): PublicGame {
   return {
     id: m.id,
     date: m.date,
-    time: null,
+    time: m.time ?? null,
     status: 'encerrado',
     home: teamById(m.homeTeamId),
     away: teamById(m.awayTeamId),
     homeScore: m.homeScore,
     awayScore: m.awayScore,
     period: null,
-    venue: null,
-    competition: null,
+    venue: m.venue ?? null,
+    competition: m.competitionId ? (allCompetitions().find((c) => c.id === m.competitionId)?.name ?? null) : 'Amistoso',
   }
 }
 
 export async function listPublicGames(): Promise<PublicGames> {
+  if (remoteApi) return request('/public/games')
+
   await delay()
-  const scheduled = upcomingMatches.map(scheduledGame)
+  const scheduled = allUpcomingMatches()
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+    .map(scheduledGame)
   return {
     live: scheduled.filter((g) => g.status === 'ao-vivo'),
     upcoming: scheduled.filter((g) => g.status === 'agendado'),
-    results: [...matches]
+    results: allFinishedMatches()
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 4)
       .map(finishedGame),

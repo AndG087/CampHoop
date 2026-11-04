@@ -1,15 +1,29 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router'
 import { RequirePermission, RequireSession } from './auth/guards'
 import { useSession } from './auth/session'
 import AppShell from './layout/AppShell'
+import CompetitionShell from './layout/CompetitionShell'
 import AthletePage from './pages/AthletePage'
 import AthletesPage from './pages/AthletesPage'
+import HomePage from './pages/HomePage'
+import CompetitionsPage from './pages/CompetitionsPage'
+import CompetitionPage from './pages/CompetitionPage'
 import LoginPage from './pages/LoginPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import LiveMatchPage from './pages/LiveMatchPage'
+import TacticsPage from './pages/TacticsPage'
 import PublicHomePage from './pages/PublicHomePage'
 import SchedulePage from './pages/SchedulePage'
 import TeamPage from './pages/TeamPage'
 import TeamsPage from './pages/TeamsPage'
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const ClubsPage = lazy(() => import('./pages/ClubsPage'))
+const ClubPage = lazy(() => import('./pages/ClubsPage').then((module) => ({ default: module.ClubPage })))
+const InvitationsPage = lazy(() => import('./pages/InvitationsPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+import { RegisterPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage, InvitationPage } from './pages/AuthPages'
+
+function LoadingPage({ children }: { children: ReactNode }) { return <Suspense fallback={<p className="muted" role="status">Carregando página…</p>}>{children}</Suspense> }
 
 function NotFound() {
   return (
@@ -31,7 +45,7 @@ function Home() {
   if (!user) return <PublicHomePage />
   return (
     <AppShell>
-      <PlaceholderPage title="Início" subtitle="Próximos jogos, atividade recente e resumo da temporada." stage={6} issue={10} />
+      <HomePage />
     </AppShell>
   )
 }
@@ -41,20 +55,33 @@ export default function App() {
     <Routes>
       <Route index element={<Home />} />
       <Route path="login" element={<LoginPage />} />
+      <Route path="cadastro" element={<RegisterPage />} />
+      <Route path="recuperar-senha" element={<ForgotPasswordPage />} />
+      <Route path="redefinir-senha" element={<ResetPasswordPage />} />
+      <Route path="confirmar-email" element={<VerifyEmailPage />} />
+      <Route path="convite" element={<InvitationPage />} />
+      <Route element={<CompetitionShell />}>
+        <Route path="campeonatos" element={<CompetitionsPage />} />
+        <Route path="campeonatos/:competitionId" element={<CompetitionPage />} />
+        <Route path="ao-vivo" element={<LiveMatchPage />} />
+      </Route>
       <Route element={<RequireSession />}>
         <Route element={<AppShell />}>
           <Route path="times" element={<TeamsPage />} />
           <Route path="times/:teamId" element={<TeamPage />} />
           <Route path="agenda" element={<SchedulePage />} />
-          <Route path="campeonatos" element={<PlaceholderPage title="Campeonatos" subtitle="Inscrições, classificação e tabela de jogos." stage={7} issue={11} />} />
           <Route path="atletas" element={<AthletesPage />} />
           <Route path="atletas/:athleteId" element={<AthletePage />} />
-          <Route path="ao-vivo" element={<PlaceholderPage title="Partida ao vivo" subtitle="Placar, ações em tempo real, box score e escalação." stage={8} issue={12} action={{ label: 'Registrar ação', permission: 'match.record' }} />} />
+          <Route path="conta" element={<LoadingPage><AccountPage /></LoadingPage>} />
+          <Route path="clubes" element={<LoadingPage><ClubsPage /></LoadingPage>} />
+          <Route path="clubes/:clubId" element={<LoadingPage><ClubPage /></LoadingPage>} />
+          <Route path="convites" element={<LoadingPage><InvitationsPage /></LoadingPage>} />
+          <Route path="notificacoes" element={<LoadingPage><NotificationsPage /></LoadingPage>} />
           <Route
             path="quadro-tatico"
             element={
               <RequirePermission permission="tactics.use">
-                <PlaceholderPage title="Quadro tático" subtitle="Posicione jogadores e desenhe jogadas." stage={9} issue={13} />
+                <TacticsPage />
               </RequirePermission>
             }
           />

@@ -1,3 +1,9 @@
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .schedule-controls {
   display: flex;
   flex-wrap: wrap;
@@ -118,6 +124,11 @@
   color: #445a7c;
 }
 
+.day__event--cancelled {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
 .day__more {
   font-size: 9px;
   color: var(--muted);
@@ -193,6 +204,60 @@
 }
 
 .event__body .muted {
+  font-size: 11px;
+}
+
+.event--cancelled .event__body b,
+.event--cancelled .event__time {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.event--cancelled .event__tag {
+  color: #a33a14;
+}
+
+.event__edit {
+  margin-left: auto;
+  padding: 7px 12px;
+  font-size: 11px;
+}
+
+.day-detail__add {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.demo-reset {
+  margin: 18px 2px 0;
+  font-size: 11px;
+}
+
+.slot-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12px;
+}
+
+.slot-list li small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.slot-list .btn {
+  padding: 7px 12px;
   font-size: 11px;
 }
 
