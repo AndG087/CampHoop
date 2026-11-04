@@ -72,6 +72,13 @@ export const ROLE_INFO: Record<Role, RoleInfo> = {
 }
 
 export type DemoUser = {
+  isDemo?: boolean
+  emailVerified?: boolean
+  hasPassword?: boolean
+  emailNotifications?: boolean
+  operatorTeamIds?: string[]
+  activeClubId?: string | null
+  clubs?: { id: string; name: string; role: string }[]
   teamIds?: string[]
   managedTeamIds?: string[]
   id: string

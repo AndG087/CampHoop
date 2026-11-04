@@ -3,11 +3,11 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
-from .auth import can_coach, coached_team_ids, require_role, require_user
+from .auth import can_coach, coached_team_ids, manages_team, require_role, require_user
 from .db import get_db
 from . import management_schemas as p
 from .management import athlete_has_records, athlete_in_boards, ensure_idle, get, locked_teams, require_owned, require_period
-from .models import Athlete, Club, CoachTeam, Competition, Enrollment, Game, TacticalPlay, TacticsDraft, Team, TeamAuthorization, TeamSeason, TrainingChange, TrainingSlot, User
+from .models import Athlete, Club, ClubMember, CoachTeam, Competition, Enrollment, Game, TacticalPlay, TacticsDraft, Team, TeamAuthorization, TeamSeason, TrainingChange, TrainingSlot, User
 from .seasons import academic_season
 
 router=APIRouter(prefix='/api/management',tags=['Autorizações e vínculos'])
@@ -32,14 +32,16 @@ def authorization_json(db,row):
 def access(id:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
     require_role(user,'tecnico');team=get(db,Team,id)
     if not can_coach(db,user,id):raise HTTPException(403,'Equipe não autorizada.')
-    owner=team.owner_id==user.id
-    coaches=[{'id':c.id,'name':c.name,'email':c.email,'owner':c.id==team.owner_id} for c in db.scalars(select(User).where(User.role=='tecnico',User.id.in_(coached_users(db,id))))] if owner else []
+    owner=manages_team(db,user,team)
+    coaches=[{'id':c.id,'name':c.name,'email':c.email,'owner':c.id in {team.owner_id,db.get(Club,team.club_id).owner_id}} for c in db.scalars(select(User).where(User.role=='tecnico',User.id.in_(coached_users(db,id))))] if owner else []
     return {'owner':owner,'coaches':coaches,'authorizations':[authorization_json(db,a) for a in db.scalars(select(TeamAuthorization).where(TeamAuthorization.team_id==id).order_by(TeamAuthorization.season,TeamAuthorization.resource))] if owner else []}
 
 def coached_users(db,team_id):
     ids=set(db.scalars(select(CoachTeam.user_id).where(CoachTeam.team_id==team_id)))
     owner=db.get(Team,team_id).owner_id
     if owner:ids.add(owner)
+    club_owner=db.get(Club,db.get(Team,team_id).club_id).owner_id
+    if club_owner:ids.add(club_owner)
     return ids
 
 def lock_access(db,actor,team_id,target_id):
@@ -54,15 +56,19 @@ def lock_access(db,actor,team_id,target_id):
 def grant_access(id:str,body:p.CoachAccess,user:User=Depends(require_user),db:Session=Depends(get_db)):
     target=db.scalar(select(User).where(User.email==body.email.strip().lower(),User.role=='tecnico',User.active.is_(True)))
     if not target:raise HTTPException(422,'Informe o e-mail de uma conta de técnico ativa.')
-    team=lock_access(db,user,id,target.id);require_owned(user,team)
+    team=lock_access(db,user,id,target.id);require_owned(user,team,db)
+    if user.is_demo!=target.is_demo:raise HTTPException(403,'Contas reais e de demonstração não compartilham acesso privado.')
+    if not user.is_demo:
+        member=db.get(ClubMember,(team.club_id,target.id))
+        if not member or member.role not in ('owner','tecnico'):raise HTTPException(403,'Convide o técnico para este clube antes de conceder acesso à equipe.')
     if target.id==team.owner_id or db.get(CoachTeam,(target.id,id)):raise HTTPException(409,'Este técnico já tem acesso.')
     db.add(CoachTeam(user_id=target.id,team_id=id));db.commit();return {'ok':True}
 
 @router.delete('/teams/{id}/access/{user_id}')
 def revoke_access(id:str,user_id:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
     team=lock_access(db,user,id,user_id)
-    if user.id!=user_id and team.owner_id!=user.id:raise HTTPException(403,'Só o dono pode revogar o acesso de outro técnico.')
-    if team.owner_id==user_id:raise HTTPException(409,'O proprietário mantém acesso enquanto for dono da equipe.')
+    if user.id!=user_id and not manages_team(db,user,team):raise HTTPException(403,'Só o responsável pode revogar o acesso de outro técnico.')
+    if user_id in {team.owner_id,db.get(Club,team.club_id).owner_id}:raise HTTPException(409,'O proprietário mantém acesso enquanto for dono da equipe.')
     link=db.get(CoachTeam,(user_id,id))
     if not link:raise HTTPException(404,'Vínculo de técnico não encontrado.')
     db.delete(link);db.flush()
@@ -142,5 +148,7 @@ def delete_team(id:str,season:str,body:p.DeleteRecord,user:User=Depends(require_
     for account in accounts:account.team_id=next(iter(sorted(coached_team_ids(db,account)-{id})),None)
     db.flush();db.execute(delete(TeamSeason).where(TeamSeason.team_id==id));db.delete(team);db.flush()
     club=db.get(Club,team.club_id)
-    if club.owner_id==user.id and not db.scalar(select(Team.id).where(Team.club_id==club.id).limit(1)):db.delete(club)
+    if user.is_demo and club.owner_id==user.id and not db.scalar(select(Team.id).where(Team.club_id==club.id).limit(1)):
+        for account in db.scalars(select(User).where(User.active_club_id==club.id)):account.active_club_id=None
+        db.flush();db.delete(club)
     db.commit();return {'ok':True}

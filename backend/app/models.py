@@ -78,6 +78,98 @@ class User(Base):
     team_id: Mapped[str | None] = mapped_column(ForeignKey('teams.id'))
     athlete_id: Mapped[str | None] = mapped_column(ForeignKey('athletes.id'))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    has_password: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
+    active_club_id: Mapped[str | None] = mapped_column(ForeignKey('clubs.id',use_alter=True,name='user_active_club_fk'))
+
+class ClubMember(Base):
+    __tablename__ = 'club_members'
+    club_id: Mapped[str] = mapped_column(ForeignKey('clubs.id',ondelete='CASCADE'),primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'),primary_key=True)
+    role: Mapped[str] = mapped_column(String(20))
+    team_id: Mapped[str | None] = mapped_column(ForeignKey('teams.id'))
+    athlete_id: Mapped[str | None] = mapped_column(ForeignKey('athletes.id'))
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ClubInvitation(Base):
+    __tablename__ = 'club_invitations'
+    id: Mapped[str] = mapped_column(String(100),primary_key=True)
+    club_id: Mapped[str] = mapped_column(ForeignKey('clubs.id',ondelete='CASCADE'),index=True)
+    email: Mapped[str] = mapped_column(String(254),index=True)
+    role: Mapped[str] = mapped_column(String(20))
+    team_id: Mapped[str | None] = mapped_column(ForeignKey('teams.id'))
+    athlete_id: Mapped[str | None] = mapped_column(ForeignKey('athletes.id'))
+    token_hash: Mapped[str] = mapped_column(String(64),unique=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_by: Mapped[str | None] = mapped_column(ForeignKey('users.id'))
+
+class AccountToken(Base):
+    __tablename__ = 'account_tokens'
+    token_hash: Mapped[str] = mapped_column(String(64),primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'),index=True)
+    purpose: Mapped[str] = mapped_column(String(20))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class Notification(Base):
+    __tablename__ = 'notifications'
+    id: Mapped[str] = mapped_column(String(100),primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'),index=True)
+    club_id: Mapped[str | None] = mapped_column(ForeignKey('clubs.id',ondelete='CASCADE'))
+    title: Mapped[str] = mapped_column(String(150))
+    body: Mapped[str] = mapped_column(String(700))
+    href: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class MailMessage(Base):
+    __tablename__ = 'mail_messages'
+    id: Mapped[str] = mapped_column(String(100),primary_key=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'))
+    club_id: Mapped[str | None] = mapped_column(ForeignKey('clubs.id',ondelete='CASCADE'))
+    recipient: Mapped[str] = mapped_column(String(254))
+    subject: Mapped[str] = mapped_column(String(150))
+    encrypted_body: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20),default='pending',index=True)
+    attempts: Mapped[int] = mapped_column(Integer,default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(40))
+
+class GoogleIdentity(Base):
+    __tablename__ = 'google_identities'
+    subject: Mapped[str] = mapped_column(String(255),primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'),unique=True)
+
+class OAuthAttempt(Base):
+    __tablename__ = 'oauth_attempts'
+    state_hash: Mapped[str] = mapped_column(String(64),primary_key=True)
+    nonce_hash: Mapped[str] = mapped_column(String(64))
+    verifier: Mapped[str] = mapped_column(String(150))
+    mode: Mapped[str] = mapped_column(String(15))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class MailIntegration(Base):
+    __tablename__ = 'mail_integrations'
+    id: Mapped[str] = mapped_column(String(20),primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'))
+    email: Mapped[str] = mapped_column(String(254))
+    encrypted_refresh: Mapped[str] = mapped_column(Text)
+
+class RateLimit(Base):
+    __tablename__ = 'rate_limits'
+    key: Mapped[str] = mapped_column(String(100),primary_key=True)
+    count: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 class AuthSession(Base):
     __tablename__ = 'auth_sessions'
@@ -95,6 +187,7 @@ class Competition(Base):
     season: Mapped[str] = mapped_column(String(12), default='2025/26')
     divisions: Mapped[list] = mapped_column(JSON)
     organizer_id: Mapped[str | None] = mapped_column(ForeignKey('users.id'))
+    club_id: Mapped[str | None] = mapped_column(ForeignKey('clubs.id',name='competition_club_fk'))
     ruleset: Mapped[str] = mapped_column(String(30), default='fiba')
     standings_mode: Mapped[str] = mapped_column(String(30), default='points')
     source_id: Mapped[str | None] = mapped_column(String(100), unique=True)

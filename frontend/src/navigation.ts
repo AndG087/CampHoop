@@ -20,6 +20,10 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/atletas', label: 'Atletas', icon: '◎', mobile: true },
   { path: '/ao-vivo', label: 'Partida ao vivo', mobileLabel: 'Ao vivo', icon: '◉', mobile: true },
   { path: '/quadro-tatico', label: 'Quadro tático', icon: '⌗', permission: 'tactics.use' },
+  { path: '/clubes', label: 'Meus clubes', icon: '◇' },
+  { path: '/convites', label: 'Convites', icon: '✉' },
+  { path: '/notificacoes', label: 'Notificações', icon: '♧' },
+  { path: '/conta', label: 'Minha conta', icon: '◌' },
 ]
 
 /** Item do menu ativo para o caminho atual (inclui páginas de detalhe, ex.: /times/sub17). */

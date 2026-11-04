@@ -4,7 +4,7 @@ import json
 import re
 from sqlalchemy import delete, or_, select
 from app.db import SessionLocal
-from app.models import Athlete, Club, CoachTeam, Enrollment, Game, MatchEvent, PlayerStat, TacticalPlay, TacticsDraft, Team, TeamAuthorization, TeamSeason, TrainingChange, TrainingSlot, User
+from app.models import Athlete, Club, ClubInvitation, ClubMember, CoachTeam, MailMessage, Notification, Enrollment, Game, MatchEvent, PlayerStat, TacticalPlay, TacticsDraft, Team, TeamAuthorization, TeamSeason, TrainingChange, TrainingSlot, User
 
 path=Path(__file__).resolve().parents[1]/'data/e2e-rosters.json'
 if path.exists():
@@ -19,6 +19,8 @@ if path.exists():
             clubs=list(db.scalars(select(Club.id).where(Club.name==prefix,Club.owner_id==user.id)))
             teams=list(db.scalars(select(Team.id).where(Team.club_id.in_(clubs),Team.owner_id==user.id,Team.source_id.is_(None))))
             athletes=list(db.scalars(select(Athlete.id).where(Athlete.team_id.in_(teams),Athlete.source_id.is_(None))))
+            if user.active_club_id in clubs:user.active_club_id=None
+            if db.scalar(select(ClubMember.user_id).where(ClubMember.club_id.in_(clubs),ClubMember.user_id!=user.id).limit(1)):raise ValueError('Another member references this test club')
             if run.get('originalTeamId'):
                 if not db.get(Team,run['originalTeamId']):raise ValueError('Original work team no longer exists')
                 user.team_id=run['originalTeamId'];db.flush()
@@ -32,6 +34,10 @@ if path.exists():
             db.execute(delete(TrainingChange).where(TrainingChange.team_id.in_(teams)))
             db.execute(delete(TrainingSlot).where(TrainingSlot.team_id.in_(teams)))
             db.execute(delete(Enrollment).where(Enrollment.team_id.in_(teams)))
+            db.execute(delete(ClubInvitation).where(ClubInvitation.club_id.in_(clubs)))
+            db.execute(delete(ClubMember).where(ClubMember.club_id.in_(clubs)))
+            db.execute(delete(Notification).where(Notification.club_id.in_(clubs)))
+            db.execute(delete(MailMessage).where(MailMessage.club_id.in_(clubs)))
             db.execute(delete(CoachTeam).where(CoachTeam.team_id.in_(teams)))
             db.execute(delete(TeamAuthorization).where(TeamAuthorization.team_id.in_(teams)))
             db.execute(delete(Athlete).where(Athlete.id.in_(athletes)))

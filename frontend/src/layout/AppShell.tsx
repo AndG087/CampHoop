@@ -2,6 +2,7 @@ import { DATA_SEASON } from '../api/client'
 import DataSource from '../components/DataSource'
 import SeasonSelector from '../components/SeasonSelector'
 import WorkTeam from '../components/WorkTeam'
+import NotificationBell from '../components/NotificationBell'
 import { startTransition, useEffect, useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { ROLE_INFO } from '../auth/roles'
@@ -18,15 +19,6 @@ export function Brand() {
         <small>GAME ON. GROW TOGETHER.</small>
       </span>
     </div>
-  )
-}
-
-function BellIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-    </svg>
   )
 }
 
@@ -93,11 +85,9 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           <div className="topbar__actions">
             <SeasonSelector />
             <input className="search" type="search" placeholder="⌕  Buscar time, atleta..." aria-label="Buscar time ou atleta" />
-            <button type="button" className="notif" aria-label="Notificações">
-              <BellIcon />
-            </button>
-            <span className="role-pill" title={`Conta de teste: ${user.name}`}>
-              <span className="role-pill__demo">TESTE</span>
+            <NotificationBell />
+            <span className="role-pill" title={`${(user.isDemo ?? true) ? 'Conta de teste' : 'Conta'}: ${user.name}`}>
+              {(user.isDemo ?? true) && <span className="role-pill__demo">TESTE</span>}
               {ROLE_INFO[user.role].label}
             </span>
           </div>

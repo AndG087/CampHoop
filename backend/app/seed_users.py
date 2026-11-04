@@ -15,7 +15,7 @@ def seed(db,password):
     for role,slug,name in ACCOUNTS:
         email=f'{slug}@camphoop.demo'
         if not db.scalar(select(User.id).where(User.email==email)):
-            db.add(User(id=f'local-{slug}',email=email,name=name,password_hash=passwords.hash(password),role=role,team_id=team_id if role in ('tecnico','atleta') else None,athlete_id=athlete_id if role=='atleta' else None))
+            db.add(User(id=f'local-{slug}',email=email,name=name,password_hash=passwords.hash(password),role=role,is_demo=True,team_id=team_id if role in ('tecnico','atleta') else None,athlete_id=athlete_id if role=='atleta' else None))
             db.flush()
             if role=='tecnico':db.add(CoachTeam(user_id=f'local-{slug}',team_id=team_id))
     db.commit()

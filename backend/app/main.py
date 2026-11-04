@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import asynccontextmanager
+import logging
 from datetime import date, datetime, timezone
 from hashlib import sha256
 from uuid import uuid4
@@ -11,18 +13,43 @@ from sqlalchemy import delete, or_, select, text, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from . import live, schemas as p
-from .auth import athlete_context, can_coach, COOKIE, create_session, optional_user, require_role, require_team, require_user
+from .auth import athlete_context, can_coach, COOKIE, create_session, optional_user, require_match_operator, require_role, require_team, require_user, work_team_id
 from .config import settings
-from .db import get_db
-from .models import AuthSession, Athlete, Competition, Enrollment, Game, SourceImport, TacticalPlay, TacticsDraft, Team, TeamSeason, TrainingChange, TrainingSlot, User
+from .db import get_db, SessionLocal
+from .models import AuthSession, Athlete, ClubMember, Competition, Enrollment, Game, SourceImport, TacticalPlay, TacticsDraft, Team, TeamSeason, TrainingChange, TrainingSlot, User
 from .read import Snapshot, home_json, schedule_json, today, user_json
 from .seasons import available_seasons, resolve_season, academic_season, is_historical
 from .management import router as management_router, team_period, require_period
 from .team_controls import router as controls_router, require_consent
+from .accounts import router as accounts_router
+from .notifications import router as notifications_router
+from .google_oauth import router as google_router
+from .mail_delivery import deliver_pending
+from .account_utils import active_club_id
 
-app = FastAPI(title='CampHoop API', version='0.2.0', description='NCAA 2024/25 e 2026/27 via SportsDataverse. Dados separados por temporada e gestão de novos jogos.')
+def mail_batch():
+    with SessionLocal() as db:deliver_pending(db)
+
+@asynccontextmanager
+async def lifespan(application):
+    async def mail_worker():
+        while True:
+            try:await asyncio.to_thread(mail_batch)
+            except Exception:logging.getLogger(__name__).warning('Mail delivery batch unavailable; retrying later.')
+            await asyncio.sleep(5)
+    task=asyncio.create_task(mail_worker()) if get_db not in application.dependency_overrides else None
+    yield
+    if task:
+        task.cancel()
+        try:await task
+        except asyncio.CancelledError:pass
+
+app = FastAPI(title='CampHoop API', version='0.3.0', lifespan=lifespan, description='Gestão de clubes, elencos, convites e notificações, com bases NCAA por temporada.')
 app.include_router(management_router)
 app.include_router(controls_router)
+app.include_router(accounts_router)
+app.include_router(notifications_router)
+app.include_router(google_router)
 app.add_middleware(CORSMiddleware, allow_origins=list(settings.origins), allow_credentials=True, allow_methods=['GET','POST','PUT','DELETE'], allow_headers=['Content-Type'])
 app.add_middleware(GZipMiddleware,minimum_size=1200,compresslevel=3)
 
@@ -49,10 +76,13 @@ def get(db, model, id):
     if not obj:
         raise HTTPException(404,'Registro não encontrado.')
     return obj
-def owner(user, competition):
+def owner(user, competition, db):
     require_role(user,'organizador')
     if competition.organizer_id != user.id:
         raise HTTPException(403,'Só o organizador deste campeonato pode alterá-lo.')
+    if not user.is_demo:
+        member=db.get(ClubMember,(competition.club_id,user.id)) if competition.club_id else None
+        if not member or member.role!='organizador':raise HTTPException(403,'Seu vínculo de organizador com este clube foi encerrado.')
 def no_game(db,team_id,day):
     if db.scalar(select(Game.id).where(Game.date==day,or_(Game.home_id==team_id,Game.away_id==team_id)).limit(1)):
         raise HTTPException(409,'A equipe já tem jogo nesse dia.')
@@ -182,12 +212,19 @@ def schedule(start:date,end:date,season:str|None=None,user:User|None=Depends(opt
 @app.post('/api/competitions')
 def create_competition(body:p.NewCompetition,season:str|None=None,user:User=Depends(require_user),db:Session=Depends(get_db)):
     require_role(user,'organizador')
+    club_id=None
+    if not user.is_demo:
+        selected_club=active_club_id(db,user)
+        member=db.get(ClubMember,(selected_club,user.id)) if selected_club else None
+        if not member or member.role!='organizador':raise HTTPException(403,'Selecione um clube no qual você seja organizador.')
+        club_id=member.club_id
     name=' '.join(body.name.split())
     if len(name)<3 or db.scalar(select(Competition.id).where(Competition.name.ilike(name))):
         raise HTTPException(409,'Nome inválido ou já utilizado.')
     divisions=list({(d.category,d.gender):d.model_dump() for d in body.divisions}.values())
     university=all(d['category']=='Universitário' for d in divisions)
     c=Competition(id=uuid4().hex,name=name,divisions=divisions,organizer_id=user.id,season=resolve_season(db,season) or academic_season(today()),note='Inscreva as equipes para preparar a tabela.',standings_mode='win-rate' if university else 'points',ruleset='by-division')
+    c.club_id=club_id
     db.add(c);db.commit()
     return c.id
 @app.post('/api/competitions/{id}/enroll')
@@ -195,7 +232,7 @@ def enroll(id:str,body:p.Enroll,user:User=Depends(require_user),db:Session=Depen
     teams={t.id:t for t in db.scalars(select(Team).where(Team.id.in_(set(body.ids))).order_by(Team.id).with_for_update())}
     c=db.scalar(select(Competition).where(Competition.id==id).with_for_update())
     if not c: raise HTTPException(404,'Campeonato não encontrado.')
-    owner(user,c)
+    owner(user,c,db)
     if c.status!='inscricoes':raise HTTPException(409,'Inscrições encerradas.')
     if len(teams)!=len(set(body.ids)):raise HTTPException(404,'Equipe não encontrada.')
     for tid,t in teams.items():
@@ -217,7 +254,7 @@ def schedule_game(body:p.NewGame,season:str|None=None,user:User=Depends(require_
     h,a=locked_teams[body.homeTeamId],locked_teams[body.awayTeamId]
     c=get(db,Competition,body.competitionId) if body.competitionId else None
     if c:
-        owner(user,c)
+        owner(user,c,db)
         if c.status=='finalizado' or not all(db.get(Enrollment,(c.id,tid)) for tid in locked_teams):raise HTTPException(409,'Campeonato encerrado ou equipes não inscritas.')
     else:
         require_role(user,'tecnico')
@@ -239,7 +276,7 @@ def schedule_game(body:p.NewGame,season:str|None=None,user:User=Depends(require_
 def slot_json(s):return {'id':s.id,'teamId':s.team_id,'weekday':s.weekday,'time':s.time,'venue':s.venue}
 @app.get('/api/training/slots')
 def slots(teamId:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    if not (can_coach(db,user,teamId) or (user.role=='atleta' and user.team_id==teamId)):raise HTTPException(403,'Treinos privados da equipe.')
+    if not (can_coach(db,user,teamId) or (user.role=='atleta' and work_team_id(db,user)==teamId)):raise HTTPException(403,'Treinos privados da equipe.')
     return [slot_json(s) for s in db.scalars(select(TrainingSlot).where(TrainingSlot.team_id==teamId).order_by(TrainingSlot.weekday,TrainingSlot.time))]
 @app.post('/api/training/slots')
 def add_slot(body:p.Slot,user:User=Depends(require_user),db:Session=Depends(get_db)):
@@ -336,13 +373,13 @@ def match(id:str,db:Session=Depends(get_db)):
     return live.json_match(db,g) if g else None
 @app.post('/api/matches/{id}/start')
 async def start(id:str,body:p.Revision,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_role(user,'estatistico');g=live.locked(db,id,body.revision);live.start(db,g);live.update_score(db,g);await hub.publish(g);return {'ok':True}
+    require_role(user,'estatistico');db.scalar(select(User).where(User.id==user.id).with_for_update(key_share=True));g=live.locked(db,id,body.revision);require_match_operator(db,user,g);live.start(db,g);live.update_score(db,g);await hub.publish(g);return {'ok':True}
 @app.post('/api/matches/{id}/control')
 async def control(id:str,body:p.Control,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_role(user,'estatistico');g=live.locked(db,id,body.revision);live.control(db,g,body.command);live.update_score(db,g);await hub.publish(g);return {'ok':True}
+    require_role(user,'estatistico');db.scalar(select(User).where(User.id==user.id).with_for_update(key_share=True));g=live.locked(db,id,body.revision);require_match_operator(db,user,g);live.control(db,g,body.command);live.update_score(db,g);await hub.publish(g);return {'ok':True}
 @app.post('/api/matches/{id}/actions')
 async def record(id:str,body:p.Record,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_role(user,'estatistico');g=live.locked(db,id,body.revision);live.record(db,g,body.input);live.update_score(db,g);await hub.publish(g);return {'ok':True}
+    require_role(user,'estatistico');db.scalar(select(User).where(User.id==user.id).with_for_update(key_share=True));g=live.locked(db,id,body.revision);require_match_operator(db,user,g);live.record(db,g,body.input);live.update_score(db,g);await hub.publish(g);return {'ok':True}
 @app.post('/api/matches/{id}/undo')
 async def undo(id:str,body:p.Revision,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_role(user,'estatistico');g=live.locked(db,id,body.revision);live.undo(db,g);live.update_score(db,g);await hub.publish(g);return {'ok':True}
+    require_role(user,'estatistico');db.scalar(select(User).where(User.id==user.id).with_for_update(key_share=True));g=live.locked(db,id,body.revision);require_match_operator(db,user,g);live.undo(db,g);live.update_score(db,g);await hub.publish(g);return {'ok':True}

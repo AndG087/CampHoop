@@ -4,9 +4,10 @@ from zoneinfo import ZoneInfo
 from types import SimpleNamespace
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from .models import Athlete, Club, Competition, Enrollment, Game, MatchEvent, PlayerStat, Team, TeamSeason, TrainingChange, TrainingSlot, User
+from .models import Athlete, Club, ClubMember, Competition, Enrollment, Game, MatchEvent, PlayerStat, Team, TeamSeason, TrainingChange, TrainingSlot, User
 from .seasons import resolve_season
 from .auth import can_coach, coached_team_ids, own_athlete_ids, work_team_id
+from .account_utils import active_club_id
 
 def today():
     return datetime.now(ZoneInfo('America/Sao_Paulo')).date()
@@ -141,7 +142,11 @@ def user_json(db: Session, user: User):
     selected_team=work_team_id(db,user)
     team = db.get(Team, selected_team) if selected_team else None
     club = db.get(Club, team.club_id) if team else None
-    return {'id': user.id, 'email': user.email, 'name': user.name, 'initials': ''.join(p[0] for p in user.name.split()[:2]), 'role': user.role, 'context': f'Conta de teste · {club.name}' if club else 'Conta de teste CampHoop', 'teamId': selected_team, 'teamIds':sorted(coached_team_ids(db,user)),'managedTeamIds':list(db.scalars(select(Team.id).where(Team.owner_id==user.id,Team.source_id.is_(None)))) if user.role=='tecnico' else [],'athleteId': user.athlete_id,'athleteIds':sorted(own_athlete_ids(db,user)), 'competitionIds': list(db.scalars(select(Competition.id).where(Competition.organizer_id == user.id)))}
+    memberships=[{'id':c.id,'name':c.name,'role':m.role} for c,m in db.execute(select(Club,ClubMember).join(ClubMember).where(ClubMember.user_id==user.id).order_by(Club.name))]
+    active_club=active_club_id(db,user)
+    context=f'Conta de teste · {club.name}' if user.is_demo and club else 'Conta de teste CampHoop' if user.is_demo else club.name if club else next((m['name'] for m in memberships if m['id']==active_club),'Sua conta CampHoop')
+    managed=list(db.scalars(select(Team.id).join(Club).where(Team.source_id.is_(None),(Team.owner_id==user.id)|(Club.owner_id==user.id)))) if user.role=='tecnico' else []
+    return {'id':user.id,'email':user.email,'name':user.name,'initials':''.join(p[0] for p in user.name.split()[:2]),'role':user.role,'context':context,'isDemo':user.is_demo,'operatorTeamIds':list(db.scalars(select(ClubMember.team_id).where(ClubMember.user_id==user.id,ClubMember.role=='estatistico',ClubMember.team_id.is_not(None)))),'emailVerified':user.email_verified,'hasPassword':user.has_password,'emailNotifications':user.email_notifications,'activeClubId':active_club,'clubs':memberships,'teamId':selected_team,'teamIds':sorted(coached_team_ids(db,user)),'managedTeamIds':managed,'athleteId':user.athlete_id,'athleteIds':sorted(own_athlete_ids(db,user)),'competitionIds':list(db.scalars(select(Competition.id).where(Competition.organizer_id==user.id,True if user.is_demo else Competition.club_id.in_(select(ClubMember.club_id).where(ClubMember.user_id==user.id,ClubMember.role=='organizador')))))}
 
 def schedule_json(db: Session, snapshot: Snapshot, start: date, end: date, viewer: User | None):
     events = [{'kind': 'jogo', 'id': g.id, 'date': g.date.isoformat(), 'time': g.time, 'game': snapshot.game(g.id)} for g in snapshot.games.values() if start <= g.date <= end]

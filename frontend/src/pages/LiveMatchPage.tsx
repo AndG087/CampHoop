@@ -52,7 +52,7 @@ export default function LiveMatchPage() {
   }
 
   const seconds = match ? clockSeconds(match.state, now) : 0
-  const recorder = can('match.record')
+  const recorder = can('match.record') && ((user?.isDemo ?? true) || !!(match && user?.operatorTeamIds?.some((teamId) => [match.game.home.id, match.game.away.id].includes(teamId))))
   const operational = recorder && !match?.historical && match?.game.status === 'ao-vivo'
   const locked = busy || matchQuery.loading
   const teamId = match && [match.game.home.id, match.game.away.id].includes(teamChoice) ? teamChoice : match?.game.home.id ?? ''

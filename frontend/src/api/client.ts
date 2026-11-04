@@ -54,7 +54,8 @@ export function request<T = never>(path: string, method = 'GET', body?: unknown)
   if (existing) return existing as Promise<T>
   const pending = performRequest<T>(path, method, body)
   pendingReads.set(key, pending)
-  pending.then(() => pendingReads.delete(key), () => pendingReads.delete(key))
+  const clear = () => { if (pendingReads.get(key) === pending) pendingReads.delete(key) }
+  pending.then(clear, clear)
   return pending
 }
 async function performRequest<T>(path: string, method: string, body?: unknown): Promise<T> {
@@ -66,7 +67,8 @@ async function performRequest<T>(path: string, method: string, body?: unknown): 
   } catch { throw new ApiError('Não foi possível conectar à API. Confira se o backend está em execução.', 0) }
   const value = await response.json().catch(() => null)
   if (!response.ok) throw new ApiError(typeof value?.detail === 'string' ? value.detail : 'Não foi possível concluir a operação.', response.status)
-  if (method !== 'GET' && !path.split('?')[0].endsWith('/draft')) invalidateApi()
+  if (method !== 'GET' && /^\/auth\/(login|logout|register|password\/reset)$/.test(path.split('?')[0])) pendingReads.clear()
+  if (method !== 'GET' && !path.startsWith('/notifications') && !path.split('?')[0].endsWith('/draft')) invalidateApi()
   return value as T
 }
 if (remoteApi) {
