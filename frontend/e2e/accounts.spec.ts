@@ -34,7 +34,12 @@ async function register(page: Page, email: string, name: string) {
   await expect(page.getByText('Entrada com Google', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Gmail do aplicativo', exact: true })).toHaveCount(0)
   await expect(page.getByText('CONFIRMAÇÃO PENDENTE', { exact: true })).toBeVisible()
-  await page.goto(await mailLink(email, 'Confirme'))
+  const confirmationLink = await mailLink(email, 'Confirme')
+  await page.goto(base + '/confirmar-email#token=invalid-confirmation-link-for-e2e')
+  await page.getByRole('button', { name: 'Confirmar meu e-mail', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Este link expirou ou já foi usado.')
+  // A new link to the same page changes only the hash; keep the page mounted.
+  await page.evaluate((hash) => { window.location.hash = hash }, new URL(confirmationLink).hash)
   await page.getByRole('button', { name: 'Confirmar meu e-mail', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('E-mail confirmado')
 }

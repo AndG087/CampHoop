@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useSession } from '../auth/session'
 import { ROLE_INFO } from '../auth/roles'
 import { acceptInvitation, forgotPassword, pendingInvitation, previewInvitation, registerAccount, resetPassword, storeInvitation, verifyEmail } from '../api/accounts'
@@ -54,8 +54,10 @@ export function ResetPasswordPage() {
 
 export function VerifyEmailPage() {
   const { user, refresh } = useSession()
-  const [token] = useState(fragmentToken)
+  const { hash } = useLocation()
+  const token = new URLSearchParams(hash.slice(1)).get('token') ?? ''
   const [done, setDone] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
+  useEffect(() => { setError(''); setDone(false) }, [token])
   async function confirm() { setBusy(true); setError(''); try { await verifyEmail(token); history.replaceState(null, '', location.pathname); await refresh(); setDone(true) } catch (e) { setError(message(e)) } finally { setBusy(false) } }
   return <AuthFrame title="Confirme seu e-mail" intro="Este passo protege sua conta e os dados privados do clube.">{done ? <><p role="status" className="account-success">E-mail confirmado. Sua conta está pronta.</p><Link className="btn btn--accent" to={pendingInvitation() ? '/convite' : user ? '/clubes' : '/login'}>Continuar</Link></> : token && !user ? <><p className="account-note">Entre na conta que você criou antes de confirmar o e-mail.</p><Link className="btn btn--accent" to="/login" state={{ from: location.pathname + location.hash }}>Entrar para confirmar</Link></> : token ? <button className="btn btn--accent" disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirmando…' : 'Confirmar meu e-mail'}</button> : <p className="account-note">Abra o link de confirmação recebido por e-mail.</p>}{error && <p className="account-error" role="alert">{error}</p>}</AuthFrame>
 }
