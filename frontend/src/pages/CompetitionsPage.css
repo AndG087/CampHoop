@@ -61,7 +61,6 @@
 .competition-card__body p.competition-card__note { font-size: 10px; color: #8e7350; min-height: 36px; }
 .competition-card__open { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 17px; margin-top: 13px; border-top: 1px solid var(--line-soft); font-size: 11px; font-weight: 700; }
 .competition-card__open svg { width: 15px; height: 15px; color: var(--accent-text); }
-.competition-demo-note { margin: 28px 0 0; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; line-height: 1.7; }
 .competition-empty { padding: 38px 20px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; background: var(--surface); }
 .competition-empty > svg { width: 32px; height: 32px; color: #a7885e; }
 .competition-empty h3 { margin: 13px 0 8px; font-size: 18px; letter-spacing: -.4px; }

@@ -15,5 +15,5 @@ export default function SeasonSelector() {
     if (path.startsWith('/atletas/')) path = '/atletas'
     navigate({ pathname: path, search: '' }, { replace: true })
   }
-  return <label className="season-selector"><span>TEMPORADA</span><select aria-label="Temporada" value={season} onChange={(e) => change(e.target.value)}>{SEASON_OPTIONS.map((s) => <option key={s.season} value={s.season}>{s.season}{s.origin === 'local' ? ' · Equipes próprias' : s.historical ? ' · NCAA histórica' : ' · NCAA'}</option>)}</select></label>
+  return <label className="season-selector"><span>TEMPORADA</span><select aria-label="Temporada" value={season} onChange={(e) => change(e.target.value)}>{SEASON_OPTIONS.map((s) => <option key={s.season} value={s.season}>{s.season}{s.historical ? ' · Histórico' : ''}</option>)}</select></label>
 }

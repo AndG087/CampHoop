@@ -1,4 +1,3 @@
-import DataSource from '../components/DataSource'
 import SeasonSelector from '../components/SeasonSelector'
 import { DATA_SEASON } from '../api/client'
 import { Link } from 'react-router'
@@ -142,9 +141,9 @@ export default function PublicHomePage() {
             </div>
           </section>
         </div>
-      <DataSource /></main>
+      </main>
 
-      <footer className="public__inner public__foot">CampHoop · Dados históricos do basquete universitário americano</footer>
+      <footer className="public__inner public__foot">CampHoop · Organize sua equipe. Viva o jogo.</footer>
     </div>
   )
 }

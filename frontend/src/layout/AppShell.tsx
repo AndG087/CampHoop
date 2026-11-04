@@ -1,5 +1,4 @@
 import { DATA_SEASON } from '../api/client'
-import DataSource from '../components/DataSource'
 import SeasonSelector from '../components/SeasonSelector'
 import WorkTeam from '../components/WorkTeam'
 import NotificationBell from '../components/NotificationBell'
@@ -62,7 +61,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </nav>
         <div className="sidebar__bottom">
           <div className="season">
-            <span>BASE DE DADOS</span>
+            <span>SUA TEMPORADA</span>
             <strong>{DATA_SEASON}</strong>
             <SeasonSelector />
           </div>
@@ -92,7 +91,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             </span>
           </div>
         </header>
-        <section className="content"><WorkTeam />{children ?? <Outlet />}<DataSource /></section>
+        <section className="content"><WorkTeam />{children ?? <Outlet />}</section>
       </main>
 
       {moreOpen && (

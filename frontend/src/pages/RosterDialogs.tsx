@@ -72,7 +72,7 @@ function AthleteEditor({ options, record, teamId, onClose }: { options: Manageme
   const [originId, setOriginId] = useState('')
   const [busy, setBusy] = useState(false); const [error, setError] = useState('')
   const candidates = options.athletes.filter((a) => a.season !== (record?.season ?? DATA_SEASON))
-  if (!teams.length) return <Modal title="Adicionar atleta" onClose={onClose}><div className="roster-form"><p>Crie uma equipe própria nesta temporada antes de cadastrar seu elenco.</p><p className="roster-form-hint">As equipes importadas da NCAA são somente leitura.</p><Link className="btn btn--accent" to="/times?nova=1" onClick={onClose}>Criar equipe própria</Link></div></Modal>
+  if (!teams.length) return <Modal title="Adicionar atleta" onClose={onClose}><div className="roster-form"><p>Crie uma equipe própria nesta temporada antes de cadastrar seu elenco.</p><p className="roster-form-hint">O cadastro de atletas está disponível nas equipes que você gerencia.</p><Link className="btn btn--accent" to="/times?nova=1" onClick={onClose}>Criar equipe própria</Link></div></Modal>
   async function submit(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError('')
     try {
