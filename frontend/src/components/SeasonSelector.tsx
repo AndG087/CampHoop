@@ -6,7 +6,7 @@ export default function SeasonSelector() {
   const season = useSeason()
   const navigate = useNavigate()
   const location = useLocation()
-  if (!remoteApi) return null
+  if (!remoteApi || !SEASON_OPTIONS.length) return null
   function change(value: string) {
     selectSeason(value)
     let path = location.pathname

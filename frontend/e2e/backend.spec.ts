@@ -4,6 +4,11 @@ import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 const envFile = new URL('../../backend/.env', import.meta.url)
 const password = process.env.CAMPHOOP_TEST_PASSWORD ?? (existsSync(envFile) ? readFileSync(envFile, 'utf8').match(/^DEMO_PASSWORD=(.+)$/m)?.[1].trim() : undefined)
 test.skip(!password, 'Set CAMPHOOP_TEST_PASSWORD or configure the local backend/.env')
+// These legacy scenarios exercise the optional NCAA demonstration dataset.
+test.beforeEach(async ({ request }) => {
+  const meta = await (await request.get('/api/meta')).json()
+  test.skip(!meta.availableSeasons?.some((s: { origin: string }) => s.origin === 'ncaa'), 'Requires the optional NCAA demonstration database')
+})
 async function login(page: Page, email: string) {
   await page.goto('/login')
   await page.getByLabel('E-mail', { exact: true }).fill(email)

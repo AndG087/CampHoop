@@ -43,7 +43,7 @@ async def lifespan(application):
         try:await task
         except asyncio.CancelledError:pass
 
-app = FastAPI(title='CampHoop API', version='0.3.0', lifespan=lifespan, description='Gestão de clubes, elencos, convites e notificações, com bases NCAA por temporada.')
+app = FastAPI(title='CampHoop API', version='0.3.0', lifespan=lifespan, description='Gestão de clubes, elencos, convites e notificações por temporada. Importação NCAA opcional.')
 app.include_router(management_router)
 app.include_router(controls_router)
 app.include_router(accounts_router)
