@@ -4,6 +4,7 @@ import secrets
 from fastapi import HTTPException
 from sqlalchemy import select
 from .models import AccountToken, Club, ClubMember, RateLimit
+from .config import settings
 
 def now():return datetime.now(timezone.utc)
 def aware(value):return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
@@ -25,6 +26,14 @@ def rate_limit(db,scope,identity,limit,seconds=3600):
 def require_verified(user):
     if user.is_demo:raise HTTPException(403,'Use uma conta real para convidar pessoas ou gerenciar clubes.')
     if not user.email_verified:raise HTTPException(403,'Confirme seu e-mail antes de continuar.')
+
+
+def can_invite_members(user):
+    return bool(user and (settings.environment=='development' and user.is_demo and user.role=='tecnico' or not user.is_demo and user.email_verified))
+
+
+def require_inviter(user):
+    if not can_invite_members(user):require_verified(user)
 
 def club_owner(db,user,club_id,lock=False):
     query=select(Club).where(Club.id==club_id)

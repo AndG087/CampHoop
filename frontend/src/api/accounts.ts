@@ -6,6 +6,7 @@ export type Invitation = { id: string; email: string; role: Role; teamId: string
 export type Member = { id: string; name: string; email: string; role: string; teamId: string | null; athleteId: string | null }
 export type ClubDetail = ClubMembership & { owner: boolean; teams: { id: string; name: string }[]; members: Member[]; athletes: { id: string; name: string; teamId: string; season: string }[]; invitations: Invitation[] }
 export type Account = DemoUser & { mail: { transport: string } }
+export type AthleteAccount = { linkedAccount: { name: string; email: string; isMember: boolean } | null; pendingInvitation: Invitation | null }
 export const registerAccount = (data: { name: string; email: string; password: string }) => request<DemoUser>('/auth/register', 'POST', data)
 export const verifyEmail = (token: string) => request('/auth/verify', 'POST', { token })
 export const resendVerification = () => request('/auth/verification', 'POST')
@@ -16,6 +17,7 @@ export const savePreferences = (emailNotifications: boolean) => request('/accoun
 export const listClubs = () => request<ClubMembership[]>('/clubs')
 export const createClub = (data: { name: string; shortName: string; city: string }) => request<ClubMembership>('/clubs', 'POST', data)
 export const getClub = (id: string) => request<ClubDetail>(`/clubs/${id}`)
+export const getAthleteAccount = (clubId: string, athleteId: string) => request<AthleteAccount>(`/clubs/${clubId}/athletes/${athleteId}/account`)
 export const activateClub = (id: string) => request(`/clubs/${id}/active`, 'POST')
 export const inviteMember = (id: string, data: { email: string; role: Role; teamId: string | null; athleteId: string | null }) => request<Invitation>(`/clubs/${id}/invitations`, 'POST', data)
 export const revokeInvitation = (clubId: string, id: string) => request(`/clubs/${clubId}/invitations/${id}`, 'DELETE')

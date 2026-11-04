@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 from app.account_utils import now
 from app.mail_delivery import decrypt,deliver_pending
-from app.models import AccountToken, AuthSession, Club, ClubInvitation, ClubMember, MailMessage, Notification, User
+from app.models import AccountToken, Athlete, AuthSession, Club, ClubInvitation, ClubMember, MailMessage, Notification, User
 from app.config import settings
 from conftest import login
 
@@ -308,3 +308,91 @@ def test_removed_organizer_cannot_continue_scheduling_a_club_competition(client,
     response=client.post('/api/games?season=2026/27',json={**body,'date':'2026-11-13'})
     assert response.status_code==403 and 'vínculo de organizador' in response.text
     assert competition not in client.get('/api/auth/me').json()['competitionIds']
+
+
+def demo_athlete(client):
+    from test_management import make_team,make_athlete
+    login(client,'tecnico');tid=make_team(client,'Equipe da Marina')
+    aid=make_athlete(client,tid)
+    cid=client.get('/api/teams/'+tid).json()['team']['club']['id']
+    return cid,tid,aid
+
+
+def test_demo_coach_invites_existing_real_account_as_athlete_with_consent(client,db):
+    uid=signup(client,db,'athlete@example.test',verify=False)
+    cid,tid,aid=demo_athlete(client)
+    url=f'/api/clubs/{cid}/athletes/{aid}/account'
+    assert client.get('/api/auth/me').json()['canInviteMembers']
+    assert client.get(url).json()=={'linkedAccount':None,'pendingInvitation':None}
+    body={'email':'athlete@example.test','role':'atleta','teamId':tid,'athleteId':aid}
+    created=client.post(f'/api/clubs/{cid}/invitations',json=body)
+    assert created.status_code==201,created.text
+    with db() as s:
+        assert s.get(User,uid).athlete_id is None
+        assert s.scalar(select(Notification).where(Notification.user_id==uid,Notification.title=='Você recebeu um convite'))
+    assert client.get(url).json()['pendingInvitation']['email']=='athlete@example.test'
+    sign_in(client,'athlete@example.test')
+    assert client.post('/api/invitations/accept',json={'invitationId':created.json()['id']}).status_code==403
+    assert client.post('/api/auth/verify',json={'token':mail_token(db,'athlete@example.test','Confirme')}).status_code==200
+    assert len(client.get('/api/invitations').json())==1
+    assert client.get('/api/athletes/'+aid).json()['private'] is None
+    accepted=client.post('/api/invitations/accept',json={'invitationId':created.json()['id']})
+    assert accepted.status_code==200,accepted.text
+    me=client.get('/api/auth/me').json()
+    assert (me['role'],me['teamId'],me['athleteId'])==('atleta',tid,aid)
+    assert client.get('/api/athletes/'+aid).json()['private']['birthDate']=='2009-03-14'
+    assert client.get(url).status_code==403
+    login(client,'tecnico')
+    assert client.get(url).json()['linkedAccount']=={'name':'Athlete','email':'athlete@example.test','isMember':True}
+    # A new season remains the same person, so it cannot be claimed by another email.
+    with db() as s:
+        athlete=s.get(Athlete,aid)
+        clone=Athlete(id='future-identity',person_id=athlete.person_id,team_id=tid,season='2027/28',name=athlete.name,number=8,status='ativo')
+        s.add(clone);s.commit()
+    assert client.post(f'/api/clubs/{cid}/invitations',json={**body,'email':'other@example.test','athleteId':'future-identity'}).status_code==409
+
+
+def test_athlete_email_details_and_invites_require_club_ownership(client,db):
+    cid,tid,aid=demo_athlete(client)
+    login(client,'other')
+    assert client.get(f'/api/clubs/{cid}/athletes/{aid}/account').status_code==403
+    assert client.post(f'/api/clubs/{cid}/invitations',json={'email':'athlete@example.test','role':'atleta','teamId':tid,'athleteId':aid}).status_code==403
+    login(client,'tecnico')
+    with db() as s:s.get(Athlete,aid).source_id='provider-athlete';s.commit()
+    assert client.get(f'/api/clubs/{cid}/athletes/{aid}/account').status_code==422
+
+
+def test_demo_invitation_permission_is_development_only(client,db,monkeypatch):
+    cid,tid,aid=demo_athlete(client)
+    import app.account_utils as utils
+    monkeypatch.setattr(utils,'settings',replace(utils.settings,environment='production'))
+    assert client.get('/api/auth/me').json()['canInviteMembers'] is False
+    assert client.get(f'/api/clubs/{cid}/athletes/{aid}/account').status_code==403
+    assert client.post(f'/api/clubs/{cid}/invitations',json={'email':'athlete@example.test','role':'atleta','teamId':tid,'athleteId':aid}).status_code==403
+
+
+def test_pending_athlete_invitation_must_be_revoked_before_changing_email(client,db):
+    cid,tid,aid=demo_athlete(client)
+    body={'email':'athlete@example.test','role':'atleta','teamId':tid,'athleteId':aid}
+    first=client.post(f'/api/clubs/{cid}/invitations',json=body)
+    assert first.status_code==201
+    assert client.post(f'/api/clubs/{cid}/invitations',json={**body,'email':'other@example.test'}).status_code==409
+    assert client.delete(f'/api/clubs/{cid}/invitations/{first.json()["id"]}').status_code==200
+    assert client.post(f'/api/clubs/{cid}/invitations',json={**body,'email':'other@example.test'}).status_code==201
+
+
+def test_basic_club_member_can_accept_athlete_assignment_without_early_access(client,db):
+    signup(client,db);cid=club(client);tid=team(client,cid)
+    from test_management import make_athlete
+    aid=make_athlete(client,tid)
+    basic=client.post(f'/api/clubs/{cid}/invitations',json={'email':'athlete@example.test','role':'basico'}).json()
+    uid=signup(client,db,'athlete@example.test')
+    assert client.post('/api/invitations/accept',json={'invitationId':basic['id']}).status_code==200
+    sign_in(client,'owner@example.test')
+    assigned=client.post(f'/api/clubs/{cid}/invitations',json={'email':'athlete@example.test','role':'atleta','teamId':tid,'athleteId':aid})
+    assert assigned.status_code==201,assigned.text
+    sign_in(client,'athlete@example.test')
+    assert client.get('/api/auth/me').json()['role']=='basico'
+    assert client.get('/api/athletes/'+aid).json()['private'] is None
+    assert client.post('/api/invitations/accept',json={'invitationId':assigned.json()['id']}).status_code==200
+    with db() as s:assert s.get(ClubMember,(cid,uid)).athlete_id==aid

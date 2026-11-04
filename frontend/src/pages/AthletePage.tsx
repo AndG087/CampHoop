@@ -1,4 +1,4 @@
-import { DATA_SEASON } from '../api/client'
+import { DATA_SEASON, remoteApi } from '../api/client'
 import { useState } from 'react'
 import { AthleteDialog } from './RosterDialogs'
 import { Link, useParams } from 'react-router'
@@ -10,6 +10,7 @@ import Avatar from '../components/Avatar'
 import { STATUS_LABEL, formatAverage, formatDate, formatHeight, formatMonthYear, formatShortDate } from '../format'
 import './AthletePage.css'
 import { DeleteRosterDialog } from './TeamControls'
+import AthleteAccountDialog from './AthleteAccountDialog'
 
 function LockNote({ own }: { own: boolean }) {
   return (
@@ -22,6 +23,8 @@ function LockNote({ own }: { own: boolean }) {
 export default function AthletePage() {
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [linkingAccount, setLinkingAccount] = useState(false)
+  const [accountNotice, setAccountNotice] = useState('')
   const { athleteId = '' } = useParams()
   const { user } = useSession()
   const { data: athlete, loading, error } = useApi(() => getAthlete(athleteId, user), `athlete:${athleteId}:${user?.id}`)
@@ -44,6 +47,7 @@ export default function AthletePage() {
 
   const ref = { id: athlete.id, teamId: athlete.team.id }
   const own = isOwnAthlete(user, ref)
+  const canLinkAccount = remoteApi && !athlete.imported && user?.canInviteMembers && user.clubs?.some((c) => c.id === athlete.team.club.id && c.role === 'owner')
   const statusClass = athlete.status === 'ativo' ? '' : athlete.status === 'lesionado' ? ' pill--warn' : ' pill--muted'
 
   return (
@@ -60,11 +64,13 @@ export default function AthletePage() {
         {canEditAthlete(user, ref) && !athlete.imported && (
           <div className="roster-page-actions"><button type="button" className="btn btn--ghost" onClick={() => setEditing(true)}>
             Editar perfil
-          </button><button type="button" className="btn btn--ghost" onClick={() => setDeleting(true)}>Excluir vínculo sem histórico</button></div>
+          </button><button type="button" className="btn btn--ghost" onClick={() => setDeleting(true)}>Excluir vínculo sem histórico</button>{canLinkAccount && <button type="button" className="btn btn--accent" onClick={() => setLinkingAccount(true)}>Vincular conta</button>}</div>
         )}
       </div>
 
+      {accountNotice && <p role="status" className="roster-notice">{accountNotice}</p>}
       <span className="roster-source">{athlete.imported ? 'IMPORTADO NCAA · SOMENTE LEITURA' : 'CADASTRO PRÓPRIO'} · {athlete.season ?? DATA_SEASON}</span>
+      {linkingAccount && canLinkAccount && <AthleteAccountDialog athlete={athlete} onClose={() => setLinkingAccount(false)} onInvited={(email) => { setLinkingAccount(false); setAccountNotice(`Convite enviado para ${email}. A pessoa poderá vincular sua conta em Meus convites, depois de confirmar o e-mail.`) }} />}
 
       <div className="athlete-layout">
         <aside className="card athlete-card">

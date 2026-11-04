@@ -74,6 +74,7 @@ export const ROLE_INFO: Record<Role, RoleInfo> = {
 export type DemoUser = {
   isDemo?: boolean
   emailVerified?: boolean
+  canInviteMembers?: boolean
   hasPassword?: boolean
   emailNotifications?: boolean
   operatorTeamIds?: string[]

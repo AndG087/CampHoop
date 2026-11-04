@@ -43,6 +43,8 @@ Pare a API antes de executar novas migrações ou importações em outro process
 
 Use **Criar conta** na tela de entrada. A confirmação de e-mail libera a criação de clubes e o aceite de convites. O responsável cria as equipes e convida pessoas com perfil e vínculo definidos. Convites têm validade de sete dias, podem ser revogados e só são aceitos por uma conta real com o e-mail correspondente confirmado. Atletas são vinculados ao seu cadastro próprio; perfis NCAA não podem ser reivindicados por convites.
 
+No perfil de um atleta próprio, o responsável usa **Vincular conta** para informar o e-mail da pessoa, consultar o vínculo ou revogar um convite pendente. Contas já cadastradas recebem o convite também nas notificações e na aba **Convites**. Membros básicos podem aceitar uma atribuição de atleta sem refazer o cadastro. No desenvolvimento, técnicos de teste como Marina podem convidar para seus próprios clubes manuais; em produção, essa permissão exige uma conta real confirmada.
+
 Em **Meus clubes**, o responsável acompanha membros, troca suas equipes e encerra vínculos. A revogação remove os acessos de técnico daquele clube e devolve ao responsável as equipes criadas pelo convidado. Estatísticos reais só operam jogos de equipes às quais estejam vinculados. Organizadores precisam de vínculo ativo com o clube para gerenciar seus campeonatos. O histórico individual do atleta permanece acessível à própria pessoa após o encerramento do vínculo, sem manter o acesso aos treinos privados do clube.
 
 Cada conta mantém um único perfil operacional, definido no cadastro do clube ou no convite aceito. Um convite com perfil incompatível é recusado; o sistema não troca silenciosamente os papéis de alguém que participa de outros clubes.

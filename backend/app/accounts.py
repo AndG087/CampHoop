@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 from . import account_schemas as p
-from .account_utils import aware, club_member, club_owner, consume_token, digest, issue_token, new_token, now, rate_limit, require_verified
+from .account_utils import aware, club_member, club_owner, consume_token, digest, issue_token, new_token, now, rate_limit, require_verified, require_inviter
 from .auth import COOKIE, create_session, passwords, require_user, coached_team_ids, own_athlete_ids
 from .config import settings
 from .db import get_db
@@ -137,14 +137,38 @@ def validate_assignment(db,club_id,role,team_id,athlete_id):
     elif athlete_id:raise HTTPException(422,'Somente convites de atleta podem vincular um perfil individual.')
     return team,athlete
 
+
+def athlete_identity_ids(db,athlete):
+    return list(db.scalars(select(Athlete.id).where(Athlete.person_id==athlete.person_id))) if athlete.person_id else [athlete.id]
+
+
+@router.get('/clubs/{id}/athletes/{athlete_id}/account')
+def athlete_account(id:str,athlete_id:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
+    require_inviter(user);club_owner(db,user,id)
+    athlete=db.get(Athlete,athlete_id)
+    if not athlete:raise HTTPException(404,'Atleta não encontrado.')
+    validate_assignment(db,id,'atleta',athlete.team_id,athlete.id)
+    ids=athlete_identity_ids(db,athlete)
+    linked=db.scalar(select(User).where(User.athlete_id.in_(ids)))
+    pending=db.scalar(select(ClubInvitation).where(ClubInvitation.club_id==id,ClubInvitation.athlete_id.in_(ids),ClubInvitation.revoked_at.is_(None),ClubInvitation.accepted_at.is_(None),ClubInvitation.expires_at>now()).order_by(ClubInvitation.created_at.desc()))
+    return {'linkedAccount':{'name':linked.name,'email':linked.email,'isMember':bool(db.get(ClubMember,(id,linked.id)))} if linked else None,'pendingInvitation':invitation_json(pending) if pending else None}
+
+
 @router.post('/clubs/{id}/invitations',status_code=201)
 def invite(id:str,body:p.Invite,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_verified(user);club=club_owner(db,user,id,lock=True)
+    require_inviter(user);club=club_owner(db,user,id,lock=True)
     if body.email==user.email or body.email.endswith('@camphoop.demo'):raise HTTPException(422,'Convide outra pessoa com um e-mail real.')
     target=db.scalar(select(User).where(User.email==body.email))
-    if target and db.get(ClubMember,(id,target.id)):raise HTTPException(409,'Esta pessoa já é membro do clube.')
+    member=db.get(ClubMember,(id,target.id)) if target else None
+    if member and (member.role!='basico' or body.role=='basico'):raise HTTPException(409,'Esta pessoa já é membro do clube com um perfil definido.')
     if not rate_limit(db,'invite',user.id,30):db.commit();raise HTTPException(429,'Limite de convites atingido. Tente mais tarde.')
-    validate_assignment(db,id,body.role,body.teamId,body.athleteId)
+    _,athlete=validate_assignment(db,id,body.role,body.teamId,body.athleteId)
+    if athlete:
+        ids=athlete_identity_ids(db,athlete)
+        linked=db.scalar(select(User).where(User.athlete_id.in_(ids),User.email!=body.email).limit(1))
+        if linked:raise HTTPException(409,'Este perfil de atleta já tem uma conta associada.')
+        pending=db.scalar(select(ClubInvitation.id).where(ClubInvitation.club_id==id,ClubInvitation.athlete_id.in_(ids),ClubInvitation.email!=body.email,ClubInvitation.revoked_at.is_(None),ClubInvitation.accepted_at.is_(None),ClubInvitation.expires_at>now()).limit(1))
+        if pending:raise HTTPException(409,'Já existe um convite pendente para este atleta. Revogue-o antes de convidar outra pessoa.')
     for old in db.scalars(select(ClubInvitation).where(ClubInvitation.club_id==id,ClubInvitation.email==body.email,ClubInvitation.accepted_at.is_(None),ClubInvitation.revoked_at.is_(None))):old.revoked_at=now()
     raw=new_token();row=ClubInvitation(id=uuid4().hex,club_id=id,email=body.email,role=body.role,team_id=body.teamId,athlete_id=body.athleteId,token_hash=digest(raw),created_by=user.id,created_at=now(),expires_at=now()+timedelta(days=7))
     db.add(row)
@@ -183,11 +207,12 @@ def accept(body:p.AcceptInvitation,user:User=Depends(require_user),db:Session=De
     club=db.scalar(select(Club).where(Club.id==initial.club_id).with_for_update())
     row=db.scalar(select(ClubInvitation).where(ClubInvitation.id==initial.id).with_for_update().execution_options(populate_existing=True));invitation_live(row)
     if row.email!=record.email:raise HTTPException(403,'Entre com a conta do e-mail que recebeu o convite.')
-    if db.get(ClubMember,(club.id,user.id)):raise HTTPException(409,'Você já pertence a este clube.')
+    member=db.get(ClubMember,(club.id,user.id))
+    if member and (member.role!='basico' or row.role=='basico'):raise HTTPException(409,'Você já pertence a este clube com um perfil definido.')
     if record.role not in ('basico',row.role):raise HTTPException(409,'O perfil do convite é diferente do perfil atual da sua conta. Peça um convite compatível.')
     team,athlete=validate_assignment(db,club.id,row.role,row.team_id,row.athlete_id)
     if athlete:
-        ids=list(db.scalars(select(Athlete.id).where(Athlete.person_id==athlete.person_id))) if athlete.person_id else [athlete.id]
+        ids=athlete_identity_ids(db,athlete)
         list(db.scalars(select(Athlete).where(Athlete.id.in_(ids)).order_by(Athlete.id).with_for_update()))
         linked=db.scalar(select(User.id).where(User.athlete_id.in_(ids),User.id!=user.id).limit(1))
         if linked:raise HTTPException(409,'Este perfil de atleta já tem uma conta associada.')
@@ -196,7 +221,8 @@ def accept(body:p.AcceptInvitation,user:User=Depends(require_user),db:Session=De
     record.role=row.role
     if team:record.team_id=team.id
     record.active_club_id=club.id
-    db.add(ClubMember(club_id=club.id,user_id=user.id,role=row.role,team_id=row.team_id,athlete_id=row.athlete_id,joined_at=now()))
+    if member:member.role=row.role;member.team_id=row.team_id;member.athlete_id=row.athlete_id
+    else:db.add(ClubMember(club_id=club.id,user_id=user.id,role=row.role,team_id=row.team_id,athlete_id=row.athlete_id,joined_at=now()))
     if row.role=='tecnico' and not db.get(CoachTeam,(user.id,team.id)):db.add(CoachTeam(user_id=user.id,team_id=team.id))
     row.accepted_at=now();row.accepted_by=user.id
     notify(db,club.owner_id,'Novo membro no clube',f'{user.name} aceitou o convite para {club.name}.','/clubes/'+club.id,club.id)
