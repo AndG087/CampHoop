@@ -1,12 +1,11 @@
 from dataclasses import replace
 from datetime import timedelta
-from urllib.parse import parse_qs,urlparse
 import re
 import pytest
 from sqlalchemy import select
 from app.account_utils import now
 from app.mail_delivery import decrypt,deliver_pending
-from app.models import AccountToken, AuthSession, Club, ClubInvitation, ClubMember, GoogleIdentity, MailIntegration, MailMessage, Notification, User
+from app.models import AccountToken, AuthSession, Club, ClubInvitation, ClubMember, MailMessage, Notification, User
 from app.config import settings
 from conftest import login
 
@@ -14,8 +13,8 @@ PASSWORD='test-account-password-2026!'
 
 @pytest.fixture(autouse=True)
 def account_settings(monkeypatch,tmp_path):
-    local=replace(settings,data_dir=tmp_path,mail_transport='capture',google_client_id='test-google-client',google_client_secret='test-google-secret',gmail_sender='sender@example.test')
-    for module in ['app.accounts','app.mail_delivery','app.google_oauth']:monkeypatch.setattr(module+'.settings',local)
+    local=replace(settings,data_dir=tmp_path,mail_transport='capture')
+    for module in ['app.accounts','app.mail_delivery']:monkeypatch.setattr(module+'.settings',local)
 
 def mail_token(db,email,subject):
     with db() as s:
@@ -176,62 +175,55 @@ def test_mail_outbox_is_encrypted_and_capture_delivery_is_local(client,db,accoun
         assert s.get(MailMessage,row.id).status=='captured'
     assert list(tmp_path.glob('mailbox/*.json'))
 
-def start_google(client,mode='login'):
-    response=client.get('/api/auth/google/start?mode='+mode,follow_redirects=False)
-    assert response.status_code==302,response.text
-    return parse_qs(urlparse(response.headers['location']).query)
+@pytest.mark.parametrize('method,path',[
+    ('get','/api/auth/providers'),
+    ('get','/api/auth/google/start'),
+    ('get','/api/auth/google/callback'),
+    ('delete','/api/auth/gmail'),
+])
+def test_external_identity_routes_are_no_longer_exposed(client,method,path):
+    assert getattr(client,method)(path,follow_redirects=False).status_code==404
 
-def mock_google(monkeypatch,values,email='google@example.test',scopes='openid email profile',nonce=None):
-    def exchange(code,verifier):
-        assert verifier and code=='test-code'
-        return {'scope':scopes,'refresh_token':'test-refresh-token'}, {'sub':'google-test-subject','email':email,'email_verified':True,'name':'Conta Google','nonce':nonce if nonce is not None else values['nonce'][0]}
-    monkeypatch.setattr('app.google_oauth.exchange',exchange)
 
-def test_google_login_has_pkce_nonce_and_cookie_bound_single_use_state(client,db,monkeypatch):
-    values=start_google(client)
-    assert values['code_challenge_method']==['S256'] and values['nonce']
-    mock_google(monkeypatch,values)
-    # A different browser has no state cookie, even if the URL was copied.
-    from fastapi.testclient import TestClient
-    from app.main import app
-    with TestClient(app) as other:
-        rejected=other.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-        assert 'invalid_state' in rejected.headers['location']
-    response=client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-    assert response.status_code==302 and response.headers['location'].endswith('/conta')
-    me=client.get('/api/auth/me').json();assert me['email']=='google@example.test' and me['emailVerified'] and not me['isDemo']
-    assert client.get('/api/account').json()['googleLinked']
-    assert 'invalid_state' in client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False).headers['location']
+def test_account_uses_password_without_external_connection_fields(client,db):
+    signup(client,db)
+    account=client.get('/api/account').json()
+    assert account['hasPassword'] and account['emailVerified']
+    assert account['mail']=={'transport':'capture'}
+    assert 'googleLinked' not in account and 'canConnectGmail' not in account
 
-def test_google_does_not_silently_link_an_existing_password_account(client,db,monkeypatch):
-    uid=signup(client,db,'google@example.test');client.post('/api/auth/logout')
-    values=start_google(client);mock_google(monkeypatch,values)
-    response=client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-    assert 'link_required' in response.headers['location']
-    assert client.get('/api/auth/me').json() is None
-    sign_in(client,'google@example.test');values=start_google(client,'link');mock_google(monkeypatch,values)
-    response=client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-    assert 'google=connected' in response.headers['location']
-    with db() as s:assert s.get(GoogleIdentity,'google-test-subject').user_id==uid
 
-def test_google_nonce_mismatch_is_rejected(client,db,monkeypatch):
-    values=start_google(client);mock_google(monkeypatch,values,nonce='wrong-nonce')
-    response=client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-    assert 'identity_invalid' in response.headers['location']
-    assert client.get('/api/auth/me').json() is None
-
-def test_gmail_connection_is_reserved_for_configured_sender_and_tokens_are_encrypted(client,db,monkeypatch):
-    signup(client,db,'not-sender@example.test')
-    assert client.get('/api/auth/google/start?mode=gmail',follow_redirects=False).status_code==403
-    signup(client,db,'sender@example.test')
-    values=start_google(client,'gmail')
-    from app.google_oauth import GMAIL_SCOPE
-    mock_google(monkeypatch,values,email='sender@example.test',scopes='openid email profile '+GMAIL_SCOPE)
-    response=client.get('/api/auth/google/callback',params={'state':values['state'][0],'code':'test-code'},follow_redirects=False)
-    assert 'gmail_connected' in response.headers['location']
+def test_auto_delivery_uses_optional_smtp_and_otherwise_local_capture(client,db,monkeypatch):
+    from app import mail_delivery
+    local=replace(mail_delivery.settings,mail_transport='auto',smtp_host='',smtp_user='',smtp_password='')
+    monkeypatch.setattr(mail_delivery,'settings',local)
     with db() as s:
-        assert s.get(MailIntegration,'gmail').encrypted_refresh!='test-refresh-token'
-        assert decrypt(s.get(MailIntegration,'gmail').encrypted_refresh)=='test-refresh-token'
+        assert mail_delivery.transport(s)=='capture'
+        monkeypatch.setattr(mail_delivery,'settings',replace(local,environment='production'))
+        assert mail_delivery.transport(s)=='disabled'
+        monkeypatch.setattr(mail_delivery,'settings',replace(local,smtp_host='smtp.example.invalid',smtp_user='sender@example.invalid',smtp_password='test-smtp-password'))
+        assert mail_delivery.transport(s)=='smtp'
+
+
+def test_smtp_delivery_does_not_require_an_external_identity_provider(client,db,monkeypatch):
+    from app import mail_delivery
+    signup(client,db)
+    monkeypatch.setattr(mail_delivery,'settings',replace(mail_delivery.settings,mail_transport='auto',smtp_host='smtp.example.invalid',smtp_port=465,smtp_user='sender@example.invalid',smtp_password='test-smtp-password'))
+    sent=[]
+    class SMTP:
+        def __init__(self,host,port,timeout):assert (host,port)==('smtp.example.invalid',465)
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def login(self,user,password):assert (user,password)==('sender@example.invalid','test-smtp-password')
+        def send_message(self,message):sent.append(message)
+    monkeypatch.setattr(mail_delivery.smtplib,'SMTP_SSL',SMTP)
+    with db() as s:
+        row=s.scalar(select(MailMessage));row.recipient='recipient@example.invalid';s.commit()
+        mail_delivery.deliver_pending(s)
+        assert s.get(MailMessage,row.id).status=='sent'
+    assert len(sent)==1 and sent[0]['From']=='sender@example.invalid'
+    assert '#token=' in sent[0].get_content()
+
 
 def test_real_statistics_operator_is_scoped_to_assigned_team_and_demo_cannot_operate_real_games(client,db):
     signup(client,db);cid=club(client);a=team(client,cid);b=team(client,cid,'Adversário')

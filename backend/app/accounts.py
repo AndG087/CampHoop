@@ -8,7 +8,7 @@ from .account_utils import aware, club_member, club_owner, consume_token, digest
 from .auth import COOKIE, create_session, passwords, require_user, coached_team_ids, own_athlete_ids
 from .config import settings
 from .db import get_db
-from .models import AccountToken, Athlete, AuthSession, Club, ClubInvitation, ClubMember, CoachTeam, GoogleIdentity, MailMessage, Team, User
+from .models import AccountToken, Athlete, AuthSession, Club, ClubInvitation, ClubMember, CoachTeam, MailMessage, Team, User
 from .mail_delivery import mail_status, notify, queue_mail
 from .read import user_json
 
@@ -72,12 +72,12 @@ def reset(body:p.ResetPassword,response:Response,db:Session=Depends(get_db)):
     db.execute(delete(AuthSession).where(AuthSession.user_id==user.id))
     for token in db.scalars(select(AccountToken).where(AccountToken.user_id==user.id,AccountToken.consumed_at.is_(None))):token.consumed_at=now()
     notify(db,user.id,'Senha alterada','Sua senha foi redefinida e as sessões anteriores foram encerradas.','/conta',email=False)
-    queue_mail(db,user.email,'Sua senha do CampHoop foi alterada','Sua senha foi redefinida. Se você não reconhece esta ação, recupere a senha imediatamente e revise o acesso à sua conta Google.\n\n'+settings.app_url+'/recuperar-senha',user.id)
+    queue_mail(db,user.email,'Sua senha do CampHoop foi alterada','Sua senha foi redefinida. Se você não reconhece esta ação, recupere a senha imediatamente.\n\n'+settings.app_url+'/recuperar-senha',user.id)
     db.commit();response.delete_cookie(COOKIE,path='/api');return {'ok':True}
 
 @router.get('/account')
 def account(user:User=Depends(require_user),db:Session=Depends(get_db)):
-    return {**user_json(db,user),'googleLinked':bool(db.scalar(select(GoogleIdentity.subject).where(GoogleIdentity.user_id==user.id))), 'mail':mail_status(db),'canConnectGmail':bool(settings.gmail_sender and settings.gmail_sender==user.email and user.email_verified and not user.is_demo)}
+    return {**user_json(db,user),'mail':mail_status(db)}
 
 @router.put('/account/preferences')
 def preferences(body:p.Preferences,user:User=Depends(require_user),db:Session=Depends(get_db)):

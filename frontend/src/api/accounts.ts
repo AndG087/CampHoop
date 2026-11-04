@@ -5,8 +5,7 @@ export type ClubMembership = { id: string; name: string; shortName: string; city
 export type Invitation = { id: string; email: string; role: Role; teamId: string | null; athleteId: string | null; expiresAt: string; status: 'pending' | 'accepted' | 'revoked' | 'expired'; club?: string }
 export type Member = { id: string; name: string; email: string; role: string; teamId: string | null; athleteId: string | null }
 export type ClubDetail = ClubMembership & { owner: boolean; teams: { id: string; name: string }[]; members: Member[]; athletes: { id: string; name: string; teamId: string; season: string }[]; invitations: Invitation[] }
-export type Account = DemoUser & { googleLinked: boolean; mail: { transport: string; gmailConnected: boolean }; canConnectGmail: boolean }
-export const getProviders = () => request<{ google: boolean; gmail: boolean; localDelivery: boolean }>('/auth/providers')
+export type Account = DemoUser & { mail: { transport: string } }
 export const registerAccount = (data: { name: string; email: string; password: string }) => request<DemoUser>('/auth/register', 'POST', data)
 export const verifyEmail = (token: string) => request('/auth/verify', 'POST', { token })
 export const resendVerification = () => request('/auth/verification', 'POST')
@@ -14,7 +13,6 @@ export const forgotPassword = (email: string) => request<{ message: string }>('/
 export const resetPassword = (token: string, password: string) => request('/auth/password/reset', 'POST', { token, password })
 export const getAccount = () => request<Account>('/account')
 export const savePreferences = (emailNotifications: boolean) => request('/account/preferences', 'PUT', { emailNotifications })
-export const disconnectGmail = () => request('/auth/gmail', 'DELETE')
 export const listClubs = () => request<ClubMembership[]>('/clubs')
 export const createClub = (data: { name: string; shortName: string; city: string }) => request<ClubMembership>('/clubs', 'POST', data)
 export const getClub = (id: string) => request<ClubDetail>(`/clubs/${id}`)

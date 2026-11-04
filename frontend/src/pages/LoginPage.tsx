@@ -4,7 +4,6 @@ import { DEMO_USERS, ROLES, ROLE_INFO } from '../auth/roles'
 import { useSession } from '../auth/session'
 import { remoteApi } from '../api/client'
 import './LoginPage.css'
-import { GoogleButton, GOOGLE_MESSAGES } from './AuthPages'
 import { pendingInvitation } from '../api/accounts'
 
 export default function LoginPage() {
@@ -13,7 +12,6 @@ export default function LoginPage() {
   const location = useLocation()
   const requested = (location.state as { from?: string } | null)?.from
   const from = requested?.startsWith('/') && !requested.startsWith('//') ? requested : pendingInvitation() ? '/convite' : '/'
-  const googleError = GOOGLE_MESSAGES[new URLSearchParams(location.search).get('google') ?? '']
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -68,10 +66,9 @@ export default function LoginPage() {
             <input type="password" autoComplete="current-password" placeholder="Sua senha" value={password} onChange={(e) => { setPassword(e.target.value); setError('') }} />
           </label>
           {error && <p className="login__error" role="alert">{error}</p>}
-          {googleError && <p className="login__error" role="alert">{googleError}</p>}
           {new URLSearchParams(location.search).get('senha') === 'alterada' && <p className="account-success" role="status">Senha alterada. Entre com sua nova senha.</p>}
           <button type="submit" disabled={busy} className="btn btn--accent login__submit">{busy ? 'Entrando…' : 'Entrar →'}</button>
-          {remoteApi && <><div className="account-links"><Link to="/recuperar-senha">Esqueci minha senha</Link><Link to="/cadastro">Criar conta</Link></div><GoogleButton disabled={busy} /></>}
+          {remoteApi && <div className="account-links"><Link to="/recuperar-senha">Esqueci minha senha</Link><Link to="/cadastro">Criar conta</Link></div>}
 
           <details className="demo-accounts">
             <summary>Contas de teste</summary>

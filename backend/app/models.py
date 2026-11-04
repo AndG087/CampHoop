@@ -143,28 +143,6 @@ class MailMessage(Base):
     attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     error_code: Mapped[str | None] = mapped_column(String(40))
 
-class GoogleIdentity(Base):
-    __tablename__ = 'google_identities'
-    subject: Mapped[str] = mapped_column(String(255),primary_key=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'),unique=True)
-
-class OAuthAttempt(Base):
-    __tablename__ = 'oauth_attempts'
-    state_hash: Mapped[str] = mapped_column(String(64),primary_key=True)
-    nonce_hash: Mapped[str] = mapped_column(String(64))
-    verifier: Mapped[str] = mapped_column(String(150))
-    mode: Mapped[str] = mapped_column(String(15))
-    user_id: Mapped[str | None] = mapped_column(ForeignKey('users.id',ondelete='CASCADE'))
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-class MailIntegration(Base):
-    __tablename__ = 'mail_integrations'
-    id: Mapped[str] = mapped_column(String(20),primary_key=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'))
-    email: Mapped[str] = mapped_column(String(254))
-    encrypted_refresh: Mapped[str] = mapped_column(Text)
-
 class RateLimit(Base):
     __tablename__ = 'rate_limits'
     key: Mapped[str] = mapped_column(String(100),primary_key=True)
