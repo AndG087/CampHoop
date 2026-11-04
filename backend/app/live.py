@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy import select, delete
-from .models import Athlete, Game, MatchEvent, PlayerStat
+from .models import Athlete, Game, MatchEvent, PlayerStat, Team
 from .read import Snapshot, seconds_left
 
 FIELDS = ['points','offensiveRebounds','defensiveRebounds','assists','steals','blocks','turnovers','fouls','fieldMade','fieldAttempts','freeMade','freeAttempts']
@@ -65,7 +65,10 @@ def json_match(db,g):
     score = {tid:sum(line['points'] for line in box.values() if line['teamId']==tid) for tid in (g.home_id,g.away_id)}
     return {'game':s.game(g.id),'state':{'matchId':g.id,'revision':g.revision,'status':g.status,'period':g.period,'remainingSeconds':g.remaining_seconds,'runningSince':g.running_since,'events':[event_json(e) for e in evs],'regulationPeriods':g.regulation_periods,'periodSeconds':g.period_seconds},'historical':g.imported,'statsComplete':g.stats_complete,'sourceUrl':g.source_url,'homeScore':(g.home_score or 0) if g.imported else score[g.home_id],'awayScore':(g.away_score or 0) if g.imported else score[g.away_id],'box':list(box.values()),'quarters':quarters}
 def locked(db,id,revision):
-    g = db.scalar(select(Game).where(Game.id==id).with_for_update())
+    existing=db.get(Game,id)
+    if existing:
+        list(db.scalars(select(Team.id).where(Team.id.in_([existing.home_id,existing.away_id])).order_by(Team.id).with_for_update()))
+    g = db.scalar(select(Game).where(Game.id==id).with_for_update().execution_options(populate_existing=True))
     if not g:
         raise HTTPException(404,'Partida não encontrada.')
     if g.imported or g.status=='encerrado':

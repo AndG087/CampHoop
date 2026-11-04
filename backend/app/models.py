@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from sqlalchemy import JSON, Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -9,6 +9,7 @@ class Club(Base):
     name: Mapped[str] = mapped_column(String(150))
     short_name: Mapped[str] = mapped_column(String(20))
     city: Mapped[str] = mapped_column(String(100), default='Não informada')
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey('users.id', use_alter=True, name='club_owner_fk'), index=True)
 
 class Team(Base):
     __tablename__ = 'teams'
@@ -18,6 +19,32 @@ class Team(Base):
     gender: Mapped[str] = mapped_column(String(20))
     coach: Mapped[str | None] = mapped_column(String(120))
     source_id: Mapped[str | None] = mapped_column(String(100), unique=True)
+    name: Mapped[str | None] = mapped_column(String(100))
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey('users.id', use_alter=True, name='team_owner_fk'), index=True)
+
+class TeamSeason(Base):
+    __tablename__ = 'team_seasons'
+    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), primary_key=True)
+    season: Mapped[str] = mapped_column(String(12), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    category: Mapped[str] = mapped_column(String(30))
+    gender: Mapped[str] = mapped_column(String(20))
+    coach: Mapped[str] = mapped_column(String(120))
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+
+class CoachTeam(Base):
+    __tablename__ = 'coach_teams'
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), primary_key=True)
+    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), primary_key=True)
+
+class TeamAuthorization(Base):
+    __tablename__ = 'team_authorizations'
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), index=True)
+    season: Mapped[str] = mapped_column(String(12))
+    kind: Mapped[str] = mapped_column(String(20))
+    resource: Mapped[str] = mapped_column(String(220))
+    __table_args__ = (UniqueConstraint('team_id','season','kind','resource',name='team_authorization_unique'),)
 
 class Athlete(Base):
     __tablename__ = 'athletes'
@@ -34,6 +61,12 @@ class Athlete(Base):
     status: Mapped[str] = mapped_column(String(20), default='historico')
     development: Mapped[dict | None] = mapped_column(JSON)
     source_id: Mapped[str | None] = mapped_column(String(100), unique=True)
+    person_id: Mapped[str | None] = mapped_column(String(100), index=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    __table_args__ = (
+        UniqueConstraint('person_id','season',name='athlete_person_season_unique'),
+        Index('manual_jersey_unique','team_id','season','number',unique=True,postgresql_where=text('source_id IS NULL AND number IS NOT NULL'),sqlite_where=text('source_id IS NULL AND number IS NOT NULL')),
+    )
 
 class User(Base):
     __tablename__ = 'users'

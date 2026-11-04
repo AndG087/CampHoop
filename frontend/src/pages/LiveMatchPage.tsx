@@ -65,7 +65,7 @@ export default function LiveMatchPage() {
 
   return (
     <div className="match-page">
-      <header className="match-page-heading"><div><div className="eyebrow">CENTRAL DE JOGOS · BASE NCAA {match?.game.season ?? DATA_SEASON}</div><h1>A bola está em jogo<span>.</span></h1><p>{recorder ? 'Cada lance nas suas mãos. Registre o jogo dos dois lados da quadra.' : 'O placar, os protagonistas e cada lance que faz a diferença.'}</p></div><span className={`match-viewer-badge${recorder ? ' match-viewer-badge--operator' : ''}`}><Icon name="ball" />{recorder ? 'MESA DO ESTATÍSTICO' : 'ACOMPANHAMENTO PÚBLICO'}</span></header>
+      <header className="match-page-heading"><div><div className="eyebrow">CENTRAL DE JOGOS · TEMPORADA {match?.game.season ?? DATA_SEASON}</div><h1>A bola está em jogo<span>.</span></h1><p>{recorder ? 'Cada lance nas suas mãos. Registre o jogo dos dois lados da quadra.' : 'O placar, os protagonistas e cada lance que faz a diferença.'}</p></div><span className={`match-viewer-badge${recorder ? ' match-viewer-badge--operator' : ''}`}><Icon name="ball" />{recorder ? 'MESA DO ESTATÍSTICO' : 'ACOMPANHAMENTO PÚBLICO'}</span></header>
 
       {games.error && <div className="match-feedback match-feedback--error" role="alert">Não foi possível carregar as partidas. <button type="button" onClick={() => setRetry((v) => v + 1)}>Tentar novamente</button></div>}
       {!games.data && games.loading && <p className="muted" role="status">Carregando partidas…</p>}

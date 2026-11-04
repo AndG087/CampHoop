@@ -1,6 +1,7 @@
 import { DATA_SEASON } from '../api/client'
 import DataSource from '../components/DataSource'
 import SeasonSelector from '../components/SeasonSelector'
+import WorkTeam from '../components/WorkTeam'
 import { startTransition, useEffect, useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { ROLE_INFO } from '../auth/roles'
@@ -101,7 +102,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             </span>
           </div>
         </header>
-        <section className="content">{children ?? <Outlet />}<DataSource /></section>
+        <section className="content"><WorkTeam />{children ?? <Outlet />}<DataSource /></section>
       </main>
 
       {moreOpen && (

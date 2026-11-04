@@ -11,14 +11,18 @@ from sqlalchemy import delete, or_, select, text, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from . import live, schemas as p
-from .auth import COOKIE, create_session, optional_user, require_role, require_team, require_user
+from .auth import athlete_context, can_coach, COOKIE, create_session, optional_user, require_role, require_team, require_user
 from .config import settings
 from .db import get_db
-from .models import AuthSession, Athlete, Competition, Enrollment, Game, SourceImport, TacticalPlay, TacticsDraft, Team, TrainingChange, TrainingSlot, User
+from .models import AuthSession, Athlete, Competition, Enrollment, Game, SourceImport, TacticalPlay, TacticsDraft, Team, TeamSeason, TrainingChange, TrainingSlot, User
 from .read import Snapshot, home_json, schedule_json, today, user_json
-from .seasons import available_seasons, resolve_season, academic_season
+from .seasons import available_seasons, resolve_season, academic_season, is_historical
+from .management import router as management_router, team_period, require_period
+from .team_controls import router as controls_router, require_consent
 
 app = FastAPI(title='CampHoop API', version='0.2.0', description='NCAA 2024/25 e 2026/27 via SportsDataverse. Dados separados por temporada e gestão de novos jogos.')
+app.include_router(management_router)
+app.include_router(controls_router)
 app.add_middleware(CORSMiddleware, allow_origins=list(settings.origins), allow_credentials=True, allow_methods=['GET','POST','PUT','DELETE'], allow_headers=['Content-Type'])
 app.add_middleware(GZipMiddleware,minimum_size=1200,compresslevel=3)
 
@@ -86,12 +90,23 @@ def health(db: Session=Depends(get_db)):
     return {'status':'ok','database':'postgresql' if db.bind.dialect.name=='postgresql' else db.bind.dialect.name}
 
 @app.get('/api/meta')
-def meta(season:str|None=None,db: Session=Depends(get_db)):
-    selected=resolve_season(db,season)
+def meta(season:str|None=None,user:User|None=Depends(optional_user),db: Session=Depends(get_db)):
+    choices_available=available_seasons(db,user,public=True)
+    if season and season not in choices_available:raise HTTPException(422,'Temporada não publicada ou sem vínculo com esta conta.')
+    default=resolve_season(db)
+    selected=season or (default if default in choices_available else next(iter(choices_available),None))
     records=list(db.scalars(select(SourceImport).order_by(SourceImport.season.desc())))
     source=next((s for s in records if s.manifest['season']==selected),None)
     spans={label:{'firstGame':first.isoformat(),'lastGame':last.isoformat()} for label,first,last in db.execute(select(Game.season,func.min(Game.date),func.max(Game.date)).where(Game.imported.is_(True)).group_by(Game.season)) if first and last}
-    return {'today':today().isoformat(),'timezone':'America/Sao_Paulo','season':selected,'historical':selected=='2024/25','source':source.manifest if source else None,'importedAt':source.imported_at.isoformat() if source else None,'availableSeasons':[{'season':s.manifest['season'],'counts':s.manifest['counts'],'importedAt':s.imported_at.isoformat(),'scope':s.manifest['scope'],**spans.get(s.manifest['season'],{})} for s in records]}
+    local_teams=dict(db.execute(select(TeamSeason.season,func.count()).group_by(TeamSeason.season)).tuples().all())
+    local_athletes=dict(db.execute(select(Athlete.season,func.count()).where(Athlete.source_id.is_(None)).group_by(Athlete.season)).tuples().all())
+    local_games=dict(db.execute(select(Game.season,func.count()).where(Game.imported.is_(False)).group_by(Game.season)).tuples().all())
+    choices=[]
+    for label in choices_available:
+        record=next((r for r in records if r.manifest['season']==label),None)
+        counts={'teams':local_teams.get(label,0),'athletes':local_athletes.get(label,0),'games':local_games.get(label,0)}
+        choices.append({'season':label,'historical':is_historical(label),'origin':'ncaa' if record else 'local','counts':record.manifest['counts'] if record else counts,'localCounts':counts,'importedAt':record.imported_at.isoformat() if record else None,'scope':record.manifest['scope'] if record else 'Dados cadastrados no CampHoop',**spans.get(label,{})})
+    return {'today':today().isoformat(),'timezone':'America/Sao_Paulo','season':selected,'historical':is_historical(selected),'source':source.manifest if source else None,'importedAt':source.imported_at.isoformat() if source else None,'availableSeasons':choices}
 
 @app.post('/api/auth/login')
 def login(body:p.Login,response:Response,db:Session=Depends(get_db)):
@@ -99,7 +114,7 @@ def login(body:p.Login,response:Response,db:Session=Depends(get_db)):
     db.commit()
     response.set_cookie(COOKIE,token,httponly=True,secure=settings.secure_cookie,samesite='lax',max_age=settings.session_hours*3600,path='/api')
     response.headers['Cache-Control']='no-store'
-    return user_json(db,user)
+    return user_json(db,athlete_context(db,user))
 @app.get('/api/auth/me')
 def me(response:Response,user:User|None=Depends(optional_user),db:Session=Depends(get_db)):
     response.headers['Cache-Control']='no-store'
@@ -177,13 +192,17 @@ def create_competition(body:p.NewCompetition,season:str|None=None,user:User=Depe
     return c.id
 @app.post('/api/competitions/{id}/enroll')
 def enroll(id:str,body:p.Enroll,user:User=Depends(require_user),db:Session=Depends(get_db)):
+    teams={t.id:t for t in db.scalars(select(Team).where(Team.id.in_(set(body.ids))).order_by(Team.id).with_for_update())}
     c=db.scalar(select(Competition).where(Competition.id==id).with_for_update())
     if not c: raise HTTPException(404,'Campeonato não encontrado.')
     owner(user,c)
     if c.status!='inscricoes':raise HTTPException(409,'Inscrições encerradas.')
-    for tid in set(body.ids):
-        t=get(db,Team,tid)
-        if not any(d['category']==t.category and d['gender']==t.gender for d in c.divisions):raise HTTPException(409,'A equipe não pertence a uma divisão deste campeonato.')
+    if len(teams)!=len(set(body.ids)):raise HTTPException(404,'Equipe não encontrada.')
+    for tid,t in teams.items():
+        require_consent(db,t,user,c.season,'enroll',c.id)
+        view=team_period(db,t,c.season)
+        if t.owner_id and not t.source_id:require_period(db,t.id,c.season)
+        if not any(d['category']==view.category and d['gender']==view.gender for d in c.divisions):raise HTTPException(409,'A equipe não pertence a uma divisão deste campeonato.')
         if db.get(Enrollment,(id,tid)):raise HTTPException(409,'Equipe já inscrita.')
         db.add(Enrollment(competition_id=id,team_id=tid))
     db.commit()
@@ -196,18 +215,22 @@ def schedule_game(body:p.NewGame,season:str|None=None,user:User=Depends(require_
     locked_teams={t.id:t for t in db.scalars(select(Team).where(Team.id.in_([body.homeTeamId,body.awayTeamId])).order_by(Team.id).with_for_update())}
     if len(locked_teams)!=2:raise HTTPException(404,'Equipe não encontrada.')
     h,a=locked_teams[body.homeTeamId],locked_teams[body.awayTeamId]
-    if (h.category,h.gender)!=(a.category,a.gender):raise HTTPException(409,'As equipes precisam ser da mesma categoria e gênero.')
     c=get(db,Competition,body.competitionId) if body.competitionId else None
     if c:
         owner(user,c)
         if c.status=='finalizado' or not all(db.get(Enrollment,(c.id,tid)) for tid in locked_teams):raise HTTPException(409,'Campeonato encerrado ou equipes não inscritas.')
     else:
         require_role(user,'tecnico')
-        if user.team_id not in locked_teams:raise HTTPException(403,'Agende amistosos da própria equipe.')
+        if not any(can_coach(db,user,tid) for tid in locked_teams):raise HTTPException(403,'Agende amistosos da própria equipe.')
     for tid in locked_teams:no_game(db,tid,body.date)
-    men=h.category=='Universitário' and h.gender=='Masculino'
-    periods,length=(2,1200) if men else (4,600)
     selected=c.season if c else resolve_season(db,season) or academic_season(body.date)
+    for t in [h,a]:
+        if t.owner_id and not t.source_id:require_period(db,t.id,selected)
+        if not c:require_consent(db,t,user,selected,'friendly',f'{body.date.isoformat()}:{a.id if t.id==h.id else h.id}')
+    hv,av=team_period(db,h,selected),team_period(db,a,selected)
+    if (hv.category,hv.gender)!=(av.category,av.gender):raise HTTPException(409,'As equipes precisam ser da mesma categoria e gênero.')
+    men=hv.category=='Universitário' and hv.gender=='Masculino'
+    periods,length=(2,1200) if men else (4,600)
     if academic_season(body.date)!=selected:raise HTTPException(422,'Escolha uma data dentro da temporada selecionada (julho a junho).')
     g=Game(id=uuid4().hex,season=selected,competition_id=c.id if c else None,home_id=h.id,away_id=a.id,date=body.date,time=body.time,venue=body.venue,status='agendado',regulation_periods=periods,period_seconds=length,remaining_seconds=length)
     db.add(g);db.commit()
@@ -216,19 +239,19 @@ def schedule_game(body:p.NewGame,season:str|None=None,user:User=Depends(require_
 def slot_json(s):return {'id':s.id,'teamId':s.team_id,'weekday':s.weekday,'time':s.time,'venue':s.venue}
 @app.get('/api/training/slots')
 def slots(teamId:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    if user.team_id!=teamId:raise HTTPException(403,'Treinos privados da equipe.')
+    if not (can_coach(db,user,teamId) or (user.role=='atleta' and user.team_id==teamId)):raise HTTPException(403,'Treinos privados da equipe.')
     return [slot_json(s) for s in db.scalars(select(TrainingSlot).where(TrainingSlot.team_id==teamId).order_by(TrainingSlot.weekday,TrainingSlot.time))]
 @app.post('/api/training/slots')
 def add_slot(body:p.Slot,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,body.teamId)
+    require_team(user,body.teamId,db)
     db.add(TrainingSlot(id=uuid4().hex,team_id=body.teamId,weekday=body.weekday,time=body.time,venue=body.venue));db.commit()
     return {'ok':True}
 @app.delete('/api/training/slots/{id}')
 def remove_slot(id:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    s=get(db,TrainingSlot,id);require_team(user,s.team_id)
+    s=get(db,TrainingSlot,id);require_team(user,s.team_id,db)
     db.delete(s);db.commit();return {'ok':True}
 def validate_slot(db,user,team_id,slot_id,day):
-    require_team(user,team_id)
+    require_team(user,team_id,db)
     s=get(db,TrainingSlot,slot_id)
     if s.team_id!=team_id or (day.weekday()+1)%7!=s.weekday:raise HTTPException(409,'Horário fixo não corresponde a esta equipe e data.')
     return s
@@ -247,10 +270,10 @@ def extra(db,body):
     db.add(TrainingChange(id=uuid4().hex,team_id=body.teamId,kind='avulso',date=body.date,time=body.time,venue=body.venue,note=body.note))
 @app.post('/api/training/extra')
 def add_extra(body:p.Extra,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,body.teamId);extra(db,body);db.commit();return {'ok':True}
+    require_team(user,body.teamId,db);extra(db,body);db.commit();return {'ok':True}
 @app.delete('/api/training/extra/{id}')
 def remove_extra(id:str,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    c=get(db,TrainingChange,id);require_team(user,c.team_id)
+    c=get(db,TrainingChange,id);require_team(user,c.team_id,db)
     if c.kind!='avulso':raise HTTPException(409,'Use a ação restaurar para este treino.')
     db.delete(c);db.commit();return {'ok':True}
 @app.post('/api/training/reschedule')
@@ -275,17 +298,17 @@ def initial_draft(s,team_id):
     return {'playId':None,'baseRevision':None,'name':'Nova jogada','kind':'ataque','notes':'','board':{'court':'half','players':[{'id':f'slot-{i+1}','athleteId':a.id,'x':positions[i][0],'y':positions[i][1]} for i,a in enumerate(roster)],'defenders':[{'id':f'defender-{i+1}','x':x,'y':y} for i,(x,y) in enumerate([(48,64),(15,28),(85,28),(39,34),(61,34)])],'showDefenders':False,'ball':{'x':56,'y':78},'drawings':[]}}
 @app.get('/api/tactics/{team_id}')
 def workspace(team_id:str,season:str|None=None,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,team_id);s=Snapshot(db,season);key=s.season or 'local'
+    require_team(user,team_id,db);s=Snapshot(db,season);key=s.season or 'local'
     if team_id not in s.teams:raise HTTPException(404,'Equipe sem dados nesta temporada.')
     initial=initial_draft(s,team_id);draft=db.get(TacticsDraft,{'season':key,'user_id':user.id,'team_id':team_id})
     return {'team':s.team(team_id),'season':s.season,'roster':[s.athlete(a.id) for a in s.roster[team_id]],'initial':initial,'draft':draft.content if draft else initial,'plays':[play_json(p) for p in db.scalars(select(TacticalPlay).where(TacticalPlay.team_id==team_id,TacticalPlay.season==key).order_by(TacticalPlay.updated_at.desc()))]}
 @app.put('/api/tactics/{team_id}/draft')
 def save_draft(team_id:str,body:p.Draft,season:str|None=None,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,team_id);selected=resolve_season(db,season);validate_draft(db,team_id,body,selected)
+    require_team(user,team_id,db);db.scalar(select(Team).where(Team.id==team_id).with_for_update());selected=resolve_season(db,season);validate_draft(db,team_id,body,selected)
     db.merge(TacticsDraft(season=selected or 'local',user_id=user.id,team_id=team_id,content=body.model_dump()));db.commit();return {'ok':True}
 @app.post('/api/tactics/{team_id}/plays')
 def save_play(team_id:str,body:p.Draft,season:str|None=None,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,team_id);selected=resolve_season(db,season);validate_draft(db,team_id,body,selected)
+    require_team(user,team_id,db);db.scalar(select(Team).where(Team.id==team_id).with_for_update());selected=resolve_season(db,season);validate_draft(db,team_id,body,selected)
     name=' '.join(body.name.split())
     if len(name)<3:raise HTTPException(422,'Use um nome de 3 a 80 caracteres.')
     play=db.scalar(select(TacticalPlay).where(TacticalPlay.id==body.playId).with_for_update()) if body.playId else None
@@ -299,7 +322,7 @@ def save_play(team_id:str,body:p.Draft,season:str|None=None,user:User=Depends(re
     return play_json(play)
 @app.delete('/api/tactics/{team_id}/plays/{id}')
 def delete_play(team_id:str,id:str,revision:int=Query(ge=1),season:str|None=None,user:User=Depends(require_user),db:Session=Depends(get_db)):
-    require_team(user,team_id)
+    require_team(user,team_id,db)
     play=db.scalar(select(TacticalPlay).where(TacticalPlay.id==id).with_for_update())
     if not play or play.team_id!=team_id or play.season!=(resolve_season(db,season) or 'local'):raise HTTPException(404,'Jogada não encontrada nesta temporada.')
     if play.revision!=revision:raise HTTPException(409,'A jogada foi atualizada em outra tela.')

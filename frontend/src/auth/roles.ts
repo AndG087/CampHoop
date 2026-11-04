@@ -72,6 +72,8 @@ export const ROLE_INFO: Record<Role, RoleInfo> = {
 }
 
 export type DemoUser = {
+  teamIds?: string[]
+  managedTeamIds?: string[]
   id: string
   /** E-mail usado no login de demonstração (qualquer senha é aceita). */
   email: string
@@ -84,6 +86,7 @@ export type DemoUser = {
   teamId?: string
   /** Cadastro de atleta ligado a esta conta. */
   athleteId?: string
+  athleteIds?: string[]
   /** Campeonatos que o organizador administra. */
   competitionIds?: string[]
 }

@@ -1,4 +1,5 @@
-import { DATA_SEASON } from '../api/client'
+import { DATA_SEASON, remoteApi } from '../api/client'
+import { TeamDialog } from './RosterDialogs'
 import { useState } from 'react'
 import LoadMore from '../components/LoadMore'
 import { Link, useSearchParams } from 'react-router'
@@ -8,6 +9,7 @@ import type { Category, Gender, TeamSummary } from '../api/types'
 import { useApi } from '../api/useApi'
 import { Can } from '../auth/guards'
 import { useSession } from '../auth/session'
+import { coachesTeam } from '../auth/access'
 import './TeamsPage.css'
 
 const GENDERS: Gender[] = ['Feminino', 'Masculino', 'Misto']
@@ -23,6 +25,7 @@ function TeamCard({ summary, mine }: { summary: TeamSummary; mine: boolean }) {
         {mine && <span className="pill">SUA EQUIPE</span>}
       </div>
       <div className="team-card__info">
+        {remoteApi && <span className="roster-source">{team.imported ? 'IMPORTADO NCAA' : 'CADASTRO PRÓPRIO'}</span>}
         <h3>{team.club.name}</h3>
         <p>{team.name} · {team.club.city}</p>
         <div className="team-card__meta">
@@ -40,8 +43,10 @@ function TeamCard({ summary, mine }: { summary: TeamSummary; mine: boolean }) {
 
 export default function TeamsPage() {
   const [shown, setShown] = useState(48)
-  const { user } = useSession()
+  const { user, can } = useSession()
   const [params, setParams] = useSearchParams()
+  const [creating, setCreating] = useState(false)
+  const origin = params.get('origem') ?? ''
   const competitionId = params.get('campeonato') ?? ''
   const gender = params.get('genero') ?? ''
   const clubId = params.get('clube') ?? ''
@@ -50,8 +55,13 @@ export default function TeamsPage() {
 
   function setFilter(key: string, value: string) {
     const next = new URLSearchParams(params)
+    if (key === 'origem' && value === 'proprio') {
+      // Previous tournament or division filters must not hide the coach's teams.
+      for (const filter of ['campeonato', 'genero', 'clube']) next.delete(filter)
+    }
     if (value) next.set(key, value)
     else next.delete(key)
+    setShown(48)
     setParams(next, { replace: true })
   }
 
@@ -63,6 +73,7 @@ export default function TeamsPage() {
         (!gender || s.team.gender === gender) &&
         (!clubId || s.team.club.id === clubId),
     )
+    .filter((s) => origin === 'proprio' ? coachesTeam(user, s.team.id) : origin === 'ncaa' ? !!s.team.imported : true)
     // Dentro de cada seção, a equipe do usuário vem primeiro.
     .sort((a, b) => Number(b.team.id === user?.teamId) - Number(a.team.id === user?.teamId))
   const sections = CATEGORIES.map((category) => ({ category, teams: visible.filter((s) => s.team.category === category) })).filter(
@@ -79,7 +90,7 @@ export default function TeamsPage() {
           <p>Equipes por campeonato e categoria, com elenco e desempenho.</p>
         </div>
         <Can permission="team.manage">
-          <button type="button" className="btn btn--accent" disabled title="Cadastro manual ainda não disponível.">
+          <button type="button" className="btn btn--accent" disabled={!remoteApi} onClick={() => setCreating(true)}>
             + Criar equipe
           </button>
         </Can>
@@ -120,6 +131,7 @@ export default function TeamsPage() {
         </select>
       </div>
 
+      {remoteApi && <div className="roster-origin-filters" role="group" aria-label="Origem das equipes">{[['', 'Todas as equipes'], ['proprio', 'Meus elencos'], ['ncaa', 'Importadas da NCAA']].filter(([key]) => key !== 'proprio' || user?.role === 'tecnico').map(([key, label]) => <button type="button" className="chip" key={key} aria-pressed={origin === key} onClick={() => setFilter('origem', key)}>{label}</button>)}</div>}
       {loading && <p className="muted">Carregando equipes…</p>}
       {error && <p className="muted">Não foi possível carregar as equipes. Recarregue a página.</p>}
       {data && sections.length === 0 && <p className="muted">Nenhuma equipe com esses filtros.</p>}
@@ -138,6 +150,7 @@ export default function TeamsPage() {
           <LoadMore shown={shown} total={section.teams.length} onMore={() => setShown((n) => n + 48)} />
         </section>
       ))}
+      {can('team.manage') && (creating || params.get('nova') === '1') && <TeamDialog onClose={() => { setCreating(false); if (params.has('nova')) { const next = new URLSearchParams(params); next.delete('nova'); setParams(next, { replace: true }) } }} />}
     </>
   )
 }

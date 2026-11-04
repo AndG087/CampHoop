@@ -1,7 +1,7 @@
 /** Browser uses FastAPI. The explicit mock mode also supports the isolated regression suite. */
 export const remoteApi = typeof window !== 'undefined' && import.meta.env.VITE_API_MODE !== 'mock'
 export let DATA_SEASON = remoteApi ? '2026/27' : '2025/26'
-export type SeasonInfo = { season: string; firstGame?: string; lastGame?: string; counts: { teams: number; games: number; athletes: number; completed?: number; scheduled?: number; postponed?: number; excludedGamesWithTbdTeams?: number }; importedAt: string; scope: string }
+export type SeasonInfo = { season: string; historical?: boolean; origin?: 'ncaa' | 'local'; firstGame?: string; lastGame?: string; counts: { teams: number; games: number; athletes: number; completed?: number; scheduled?: number; postponed?: number; excludedGamesWithTbdTeams?: number }; localCounts?: { teams: number; athletes: number; games: number }; importedAt: string | null; scope: string }
 export type SourceMetadata = { season: string | null; availableSeasons: SeasonInfo[] }
 export let SEASON_OPTIONS: SeasonInfo[] = []
 const seasonListeners = new Set<() => void>()
@@ -24,6 +24,12 @@ export function selectSeason(season: string) {
 export const CURRENT_DATE = remoteApi ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date()) : '2025-11-03'
 export function calendarFocusDate() {
   const info = SEASON_OPTIONS.find((s) => s.season === DATA_SEASON)
+  if (info?.origin === 'local') {
+    const start = `${DATA_SEASON.slice(0, 4)}-07-01`
+    const end = `${Number(DATA_SEASON.slice(0, 4)) + 1}-06-30`
+    if (CURRENT_DATE < start) return start
+    if (CURRENT_DATE > end) return end
+  }
   if (info?.lastGame && CURRENT_DATE > info.lastGame) return info.lastGame
   if (info?.firstGame && CURRENT_DATE < info.firstGame) return info.firstGame
   return CURRENT_DATE

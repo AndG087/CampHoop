@@ -8,11 +8,11 @@ import { roleCan, type DemoUser } from './roles'
 type AthleteRef = { id: string; teamId: string }
 
 export function isOwnAthlete(user: DemoUser | null, athlete: AthleteRef): boolean {
-  return !!user && user.athleteId === athlete.id
+  return !!user && (user.athleteId === athlete.id || !!user.athleteIds?.includes(athlete.id))
 }
 
 export function coachesTeam(user: DemoUser | null, teamId: string): boolean {
-  return !!user && user.role === 'tecnico' && user.teamId === teamId
+  return !!user && user.role === 'tecnico' && (user.teamId === teamId || !!user.teamIds?.includes(teamId))
 }
 
 /** Data de nascimento completa e objetivo de treino (decisão #5: só técnico da equipe e o próprio atleta). */
@@ -21,11 +21,11 @@ export function canViewAthletePrivate(user: DemoUser | null, athlete: AthleteRef
 }
 
 export function canEditAthlete(user: DemoUser | null, athlete: AthleteRef): boolean {
-  return !!user && roleCan(user.role, 'athlete.manage') && coachesTeam(user, athlete.teamId)
+  return !!user && roleCan(user.role, 'athlete.manage') && (user.managedTeamIds ? user.managedTeamIds.includes(athlete.teamId) : coachesTeam(user, athlete.teamId))
 }
 
 export function canEditTeam(user: DemoUser | null, teamId: string): boolean {
-  return !!user && roleCan(user.role, 'team.manage') && coachesTeam(user, teamId)
+  return !!user && roleCan(user.role, 'team.manage') && (user.managedTeamIds ? user.managedTeamIds.includes(teamId) : coachesTeam(user, teamId))
 }
 
 /** Horário fixo e exceções de treino: só o técnico da própria equipe. */

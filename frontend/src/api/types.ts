@@ -15,6 +15,9 @@ export type Club = {
 }
 
 export type Team = {
+  imported?: boolean
+  season?: string | null
+  revision?: number
   id: string
   club: Club
   category: Category
@@ -25,6 +28,8 @@ export type Team = {
 
 /** Dados públicos de um atleta: o que qualquer perfil pode ver. */
 export type AthleteSummary = {
+  imported?: boolean
+  revision?: number
   season?: string | null
   id: string
   name: string
@@ -63,7 +68,7 @@ export type AthleteProfile = AthleteSummary & {
   recentGames: GameLine[]
   /** Só vem preenchido para o técnico da equipe e para o próprio atleta. */
   private: {
-    birthDate: string // AAAA-MM-DD
+    birthDate: string | null // AAAA-MM-DD, when known
     development: Development | null
   } | null
 }

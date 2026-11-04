@@ -76,7 +76,7 @@ export default function PublicHomePage() {
 
       <main className="public__inner public__main">
         <section className="public__intro">
-          <div className="eyebrow">BASQUETE UNIVERSITÁRIO · NCAA {DATA_SEASON}</div>
+          <div className="eyebrow">BASQUETE · TEMPORADA {DATA_SEASON}</div>
           <h1>Torneios e jogos, abertos a todos.</h1>
           <p>Acompanhe placares, próximos jogos e resultados das equipes, sem precisar de conta.</p>
         </section>

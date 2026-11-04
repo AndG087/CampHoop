@@ -3,7 +3,7 @@ import os
 from sqlalchemy import select
 from .auth import passwords
 from .db import SessionLocal
-from .models import Athlete, Team, User
+from .models import Athlete, CoachTeam, Team, User
 
 ACCOUNTS=[('tecnico','marina','Marina Costa'),('atleta','luiza','Luiza Martins'),('estatistico','carlos','Carlos Mendes'),('organizador','beatriz','Beatriz Nogueira'),('basico','joao','João Pereira')]
 def seed(db,password):
@@ -16,6 +16,8 @@ def seed(db,password):
         email=f'{slug}@camphoop.demo'
         if not db.scalar(select(User.id).where(User.email==email)):
             db.add(User(id=f'local-{slug}',email=email,name=name,password_hash=passwords.hash(password),role=role,team_id=team_id if role in ('tecnico','atleta') else None,athlete_id=athlete_id if role=='atleta' else None))
+            db.flush()
+            if role=='tecnico':db.add(CoachTeam(user_id=f'local-{slug}',team_id=team_id))
     db.commit()
 if __name__=='__main__':
     with SessionLocal() as db:seed(db,os.getenv('DEMO_PASSWORD'))

@@ -1,10 +1,12 @@
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
+from types import SimpleNamespace
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from .models import Athlete, Club, Competition, Enrollment, Game, MatchEvent, PlayerStat, Team, TrainingChange, TrainingSlot, User
+from .models import Athlete, Club, Competition, Enrollment, Game, MatchEvent, PlayerStat, Team, TeamSeason, TrainingChange, TrainingSlot, User
 from .seasons import resolve_season
+from .auth import can_coach, coached_team_ids, own_athlete_ids, work_team_id
 
 def today():
     return datetime.now(ZoneInfo('America/Sao_Paulo')).date()
@@ -25,6 +27,7 @@ def clock_label(game: Game):
 class Snapshot:
     """Season-scoped reads; live projections load only one game and its two rosters."""
     def __init__(self, db: Session, season: str | None = None, game: Game | None = None):
+        self.db=db
         self.season = resolve_season(db, season)
         team_ids=[game.home_id,game.away_id] if game else None
         club_query=select(Club).join(Team).where(Team.id.in_(team_ids)) if game else select(Club)
@@ -35,6 +38,13 @@ class Snapshot:
         if game:competition_query=competition_query.where(Competition.id==game.competition_id)
         self.clubs = {r.id: r for r in db.scalars(club_query)}
         self.teams = {r.id: r for r in db.scalars(team_query)}
+        periods_query=select(TeamSeason).where(TeamSeason.season==self.season) if self.season else select(TeamSeason).where(False)
+        if game:periods_query=periods_query.where(TeamSeason.team_id.in_(team_ids))
+        self.periods={p.team_id:p for p in db.scalars(periods_query)}
+        for id,p in self.periods.items():
+            if id in self.teams:
+                t=self.teams[id]
+                self.teams[id]=SimpleNamespace(id=id,club_id=t.club_id,source_id=t.source_id,owner_id=t.owner_id,name=p.name,category=p.category,gender=p.gender,coach=p.coach,revision=p.revision)
         self.athletes = {r.id: r for r in db.scalars(athlete_query)}
         self.competitions = {r.id: r for r in db.scalars(competition_query)}
         self.games = {game.id:game} if game else {r.id: r for r in db.scalars(select(Game).where(Game.season == self.season) if self.season else select(Game))}
@@ -53,7 +63,7 @@ class Snapshot:
                 self.completed_by_team[g.home_id].append(g)
                 self.completed_by_team[g.away_id].append(g)
         if self.season:
-            visible = set(self.roster) | {t for ids in self.enrolled.values() for t in ids} | {t for g in self.games.values() for t in (g.home_id,g.away_id)}
+            visible = set(self.periods) | set(self.roster) | {t for ids in self.enrolled.values() for t in ids} | {t for g in self.games.values() for t in (g.home_id,g.away_id)}
             self.teams = {id:t for id,t in self.teams.items() if id in visible}
         self.by_athlete = defaultdict(list)
         for r in self.lines:
@@ -63,7 +73,7 @@ class Snapshot:
     def team(self, id: str):
         t = self.teams[id]
         c = self.clubs[t.club_id]
-        return {'id': t.id, 'club': {'id': c.id, 'name': c.name, 'shortName': c.short_name, 'city': c.city}, 'category': t.category, 'gender': t.gender, 'name': f'{t.category} {t.gender}'}
+        return {'id': t.id, 'club': {'id': c.id, 'name': c.name, 'shortName': c.short_name, 'city': c.city}, 'category': t.category, 'gender': t.gender, 'name': t.name or f'{t.category} {t.gender}', 'season':self.season,'revision':getattr(t,'revision',0),'imported':bool(t.source_id)}
 
     def competition(self, id: str):
         c = self.competitions[id]
@@ -80,14 +90,14 @@ class Snapshot:
         if a.birth_date:
             d = today()
             age = d.year - a.birth_date.year - ((d.month, d.day) < (a.birth_date.month, a.birth_date.day))
-        return {'id': a.id, 'season': a.season, 'name': a.name, 'number': a.number, 'position': a.position, 'photoUrl': a.photo_url, 'age': age, 'heightCm': a.height_cm, 'memberSince': a.member_since, 'status': a.status, 'team': self.team(a.team_id), 'games': len(lines), 'pointsPerGame': round(sum(r.points for r in lines) / len(lines), 1) if lines else 0}
+        return {'id': a.id, 'season': a.season, 'revision':a.revision,'imported':bool(a.source_id),'name': a.name, 'number': a.number, 'position': a.position, 'photoUrl': a.photo_url, 'age': age, 'heightCm': a.height_cm, 'memberSince': a.member_since, 'status': a.status, 'team': self.team(a.team_id), 'games': len(lines), 'pointsPerGame': round(sum(r.points for r in lines) / len(lines), 1) if lines else 0}
 
     def athlete_profile(self, id: str, viewer: User | None):
         a = self.athletes[id]
         lines = sorted(self.by_athlete[id], key=lambda s: (self.games[s.game_id].date, s.game_id), reverse=True)
         private = None
-        if viewer and ((viewer.role == 'tecnico' and viewer.team_id == a.team_id) or viewer.athlete_id == a.id) and a.birth_date:
-            private = {'birthDate': a.birth_date.isoformat(), 'development': a.development}
+        if viewer and (can_coach(self.db,viewer,a.team_id) or a.id in own_athlete_ids(self.db,viewer)):
+            private = {'birthDate': a.birth_date.isoformat() if a.birth_date else None, 'development': a.development}
         games = []
         for line in lines[:5]:
             g = self.games[line.game_id]
@@ -128,14 +138,15 @@ class Snapshot:
         return {**self.competition(id), 'enrolled': [self.team(t) for t in sorted(self.enrolled[id])], 'games': [self.game(g.id) for g in games], 'standings': standings}
 
 def user_json(db: Session, user: User):
-    team = db.get(Team, user.team_id) if user.team_id else None
+    selected_team=work_team_id(db,user)
+    team = db.get(Team, selected_team) if selected_team else None
     club = db.get(Club, team.club_id) if team else None
-    return {'id': user.id, 'email': user.email, 'name': user.name, 'initials': ''.join(p[0] for p in user.name.split()[:2]), 'role': user.role, 'context': f'Conta de teste · {club.name}' if club else 'Conta de teste CampHoop', 'teamId': user.team_id, 'athleteId': user.athlete_id, 'competitionIds': list(db.scalars(select(Competition.id).where(Competition.organizer_id == user.id)))}
+    return {'id': user.id, 'email': user.email, 'name': user.name, 'initials': ''.join(p[0] for p in user.name.split()[:2]), 'role': user.role, 'context': f'Conta de teste · {club.name}' if club else 'Conta de teste CampHoop', 'teamId': selected_team, 'teamIds':sorted(coached_team_ids(db,user)),'managedTeamIds':list(db.scalars(select(Team.id).where(Team.owner_id==user.id,Team.source_id.is_(None)))) if user.role=='tecnico' else [],'athleteId': user.athlete_id,'athleteIds':sorted(own_athlete_ids(db,user)), 'competitionIds': list(db.scalars(select(Competition.id).where(Competition.organizer_id == user.id)))}
 
 def schedule_json(db: Session, snapshot: Snapshot, start: date, end: date, viewer: User | None):
     events = [{'kind': 'jogo', 'id': g.id, 'date': g.date.isoformat(), 'time': g.time, 'game': snapshot.game(g.id)} for g in snapshot.games.values() if start <= g.date <= end]
-    if viewer and viewer.team_id:
-        team_id = viewer.team_id
+    if viewer and work_team_id(db,viewer):
+        team_id = work_team_id(db,viewer)
         slots = list(db.scalars(select(TrainingSlot).where(TrainingSlot.team_id == team_id)))
         changes = list(db.scalars(select(TrainingChange).where(TrainingChange.team_id == team_id, TrainingChange.date.between(start, end))))
         d = start
@@ -153,7 +164,7 @@ def schedule_json(db: Session, snapshot: Snapshot, start: date, end: date, viewe
     return sorted(events, key=lambda e: (e['date'], e['time'] or '', e['id']))
 
 def home_json(db: Session, s: Snapshot, viewer: User, scope: str):
-    team_id = viewer.team_id if scope == 'minha' else None
+    team_id = work_team_id(db,viewer) if scope == 'minha' else None
     teams = [t for t in s.teams.values() if not team_id or t.id == team_id]
     roster = [a for a in s.athletes.values() if not team_id or a.team_id == team_id]
     games = sorted((g for g in s.games.values() if g.status == 'encerrado' and (not team_id or team_id in (g.home_id, g.away_id))), key=lambda g: (g.date, g.id))
