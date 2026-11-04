@@ -2,7 +2,7 @@
 
 Plataforma de gestão de basquete com frontend React/Vite e backend FastAPI/PostgreSQL.
 
-O ambiente atual utiliza dados NCAA masculino e feminino via SportsDataverse/ESPN: torneios históricos de 2024/25 e calendários/box scores publicados de 2026/27. O seletor mantém elencos, médias, resultados e pranchetas separados por temporada.
+O ambiente principal usa os clubes, equipes e atletas cadastrados no CampHoop. A base NCAA foi arquivada; sua importação é opcional e fica desativada na inicialização padrão. O seletor mantém elencos, médias, resultados e pranchetas separados por temporada. Veja o [guia de limpeza e backup](docs/limpeza-ncaa.md).
 
 Consulte [backend/README.md](backend/README.md) para instalar, iniciar a API e o banco, acessar as contas locais e executar os testes. O frontend está em `frontend/`; `outputs/camphoop-prototipo.html` preserva a referência visual original.
 

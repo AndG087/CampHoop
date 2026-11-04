@@ -48,8 +48,8 @@ export function formatAverage(n: number): string {
 }
 
 export const STATUS_LABEL: Record<AthleteStatus, string> = {
-  registrado: 'CADASTRO DA FONTE',
-  historico: 'BASE HISTÓRICA',
+  registrado: 'CADASTRADO',
+  historico: 'HISTÓRICO',
   ativo: 'EM ATIVIDADE',
   lesionado: 'LESÃO',
   afastado: 'AFASTAMENTO',

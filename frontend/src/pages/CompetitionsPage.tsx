@@ -84,7 +84,6 @@ export default function CompetitionsPage() {
           <div className="competition-card__body"><div className="eyebrow">{c.phase}</div><h3>{c.name}</h3><p>{c.categories}</p><div className="competition-card__stats"><span><b>{c.teams}</b> equipes inscritas</span><span><b>{c.divisions.length}</b> divisões</span></div><p className="competition-card__note">{c.note}</p><div className="competition-card__open"><span>{canManageCompetition(user, c) ? 'Gerenciar campeonato' : 'Classificação e jogos'}</span><Icon name="arrow" /></div></div>
         </Link>)}
       </div>
-      <p className="competition-demo-note">Histórico NCAA importado · Novos campeonatos salvos no banco.</p>
       {user && creating && <CreateCompetitionDialog user={user} onClose={() => setCreating(false)} onCreated={(id) => { setCreating(false); navigate(`/campeonatos/${id}`) }} />}
     </div>
   )

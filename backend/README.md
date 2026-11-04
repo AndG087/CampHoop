@@ -23,7 +23,7 @@ npm run db
 ```
 
 ```powershell
-# 2 — pasta backend: migração, importação idempotente, contas locais e API
+# 2 — pasta backend: migração, contas locais e API (sem importação NCAA)
 ./scripts/start-api.ps1
 ```
 
@@ -35,13 +35,15 @@ npm run dev
 
 Frontend: http://localhost:5173 · API: http://127.0.0.1:8000/docs · Saúde: http://127.0.0.1:8000/api/health.
 
-As cinco contas locais são `marina`, `luiza`, `carlos`, `beatriz` e `joao` em `@camphoop.demo`. A senha aleatória está em **`backend/.env`, campo `DEMO_PASSWORD`**. Contas são fictícias, identificadas como teste; Marina usa a equipe feminina de UConn como ambiente de trabalho. O vínculo original de Luiza continua no perfil histórico de 2024/25. Não representam profissionais ou atletas reais. `seed_users` preserva contas existentes e não troca senhas silenciosamente. O `.env`, os hashes de acesso e o banco não entram no Git.
+As cinco contas locais são `marina`, `luiza`, `carlos`, `beatriz` e `joao` em `@camphoop.demo`. A senha aleatória está em **`backend/.env`, campo `DEMO_PASSWORD`**. Contas são fictícias, identificadas como teste e criadas sem vínculo automático com equipes ou atletas NCAA. Os clubes, elencos e vínculos próprios existentes são preservados; `seed_users` não troca senhas silenciosamente. O `.env`, os hashes de acesso e o banco não entram no Git.
 
 Pare a API antes de executar novas migrações ou importações em outro processo usando PGlite. Ele atende uma conexão do banco por vez; a API usa pool de uma conexão. Execute um único worker. Para PostgreSQL convencional, configure `DATABASE_URL` e use as mesmas migrações.
 
 ## Contas reais, clubes e notificações
 
 Use **Criar conta** na tela de entrada. A confirmação de e-mail libera a criação de clubes e o aceite de convites. O responsável cria as equipes e convida pessoas com perfil e vínculo definidos. Convites têm validade de sete dias, podem ser revogados e só são aceitos por uma conta real com o e-mail correspondente confirmado. Atletas são vinculados ao seu cadastro próprio; perfis NCAA não podem ser reivindicados por convites.
+
+No perfil de um atleta próprio, o responsável usa **Vincular conta** para informar o e-mail da pessoa, consultar o vínculo ou revogar um convite pendente. Contas já cadastradas recebem o convite também nas notificações e na aba **Convites**. Membros básicos podem aceitar uma atribuição de atleta sem refazer o cadastro. No desenvolvimento, técnicos de teste como Marina podem convidar para seus próprios clubes manuais; em produção, essa permissão exige uma conta real confirmada.
 
 Em **Meus clubes**, o responsável acompanha membros, troca suas equipes e encerra vínculos. A revogação remove os acessos de técnico daquele clube e devolve ao responsável as equipes criadas pelo convidado. Estatísticos reais só operam jogos de equipes às quais estejam vinculados. Organizadores precisam de vínculo ativo com o clube para gerenciar seus campeonatos. O histórico individual do atleta permanece acessível à própria pessoa após o encerramento do vínculo, sem manter o acesso aos treinos privados do clube.
 
@@ -55,11 +57,15 @@ A fila de e-mails usa corpos criptografados, tentativas limitadas, espera entre 
 
 Para testar do zero sem apagar a base principal, execute `scripts/test-accounts.ps1`. Ele cria um diretório temporário verificado, uma base SQLite sem importações, API na porta 8001 e frontend na 5174. O teste cadastra duas contas, captura e-mails localmente, aceita convite, confere notificações, revoga acesso e recupera a senha. Depois, encerra apenas seus próprios processos e remove o diretório que criou. `-KeepData` preserva o diagnóstico; schemas PostgreSQL isolados validam as migrações e regras reais separadamente.
 
-## Base existente da NCAA
+## Base opcional da NCAA
+
+O ambiente principal funciona com os cadastros próprios. `scripts/start-api.ps1` não importa NCAA. A captura anterior fica em um backup privado, com uma cópia SQLite cuja restauração foi verificada. Para conferir a simulação, executar a limpeza ou consultar o arquivo, veja [limpeza e backup da NCAA](../docs/limpeza-ncaa.md).
+
+Os importadores abaixo permanecem disponíveis para uso explícito em uma base de demonstração separada. `scripts/start-api.ps1 -ImportNcaa` também importa as capturas, por escolha explícita; esse parâmetro não deve ser usado na base principal limpa.
 
 Fonte: [SportsDataverse](https://github.com/sportsdataverse/sportsdataverse-data), arquivos Parquet de calendário e box scores ESPN. Importamos os **torneios nacionais da Division I de 2025, masculino e feminino**, da temporada **2024/25**: **136 equipes, 134 partidas encerradas e 2.039 atletas**. São 3.995 linhas individuais, incluindo quem não entrou em quadra. As médias excluem DNP. Não é uma integração de placares NCAA em tempo real nem a temporada regular completa.
 
-URLs, SHA-256, transformações, cobertura e anomalias estão em [ncaa-2025.manifest.json](ncaa-2025.manifest.json), também acessível em `/api/meta?season=2024/25`. O importador histórico filtra o torneio antes de converter as tabelas, evita duplicatas e recusa arquivos com checksum diferente do manifesto. Reexecutar não sobrescreve dados locais. Para atualizar o recorte histórico, revise o importador e as fontes antes de mudar o manifesto.
+URLs, SHA-256, transformações, cobertura e anomalias estão em [ncaa-2025.manifest.json](ncaa-2025.manifest.json). Quando a base opcional está importada, sua cobertura fica em `/api/meta?season=2024/25`. O importador histórico filtra o torneio antes de converter as tabelas, evita duplicatas e recusa arquivos com checksum diferente do manifesto. Reexecutar não sobrescreve dados locais. Para atualizar o recorte histórico, revise o importador e as fontes antes de mudar o manifesto.
 
 ```powershell
 ./.venv/Scripts/python.exe -m app.import_ncaa
@@ -86,7 +92,7 @@ Os 348 jogos encerrados têm box scores na captura. Há **12 divergências** ent
 ./.venv/Scripts/python.exe -m app.import_current --refresh
 ```
 
-A importação é idempotente e só altera registros importados de 2026/27. O histórico 2024/25 e os jogos criados pelo usuário são preservados. Reinicie a API e recarregue a página depois da atualização para carregar a nova data de captura. Não há coleta automática agendada nem transmissão de placares NCAA em tempo real. Na primeira instalação, o script de inicialização baixa e valida a captura corrente; nas seguintes, reutiliza os arquivos locais. `--refresh` é explícito porque os arquivos da temporada em andamento são substituídos pelo provedor.
+A importação é idempotente e só altera registros importados de 2026/27. O histórico 2024/25 e os jogos criados pelo usuário são preservados. Reinicie a API e recarregue a página depois da atualização para carregar a nova data de captura. Não há coleta automática agendada nem transmissão de placares NCAA em tempo real. A importação ocorre somente quando solicitada explicitamente. Os arquivos locais podem ser reutilizados no modo offline. `--refresh` é explícito porque os arquivos da temporada em andamento são substituídos pelo provedor.
 
 O seletor de temporada aparece na área pública, no menu lateral e na barra móvel. A seleção é lembrada no navegador. Listas, perfis de equipes, médias, agenda e campeonatos usam `?season=2026/27` ou `?season=2024/25`; sem parâmetro, a API escolhe a captura mais recente disponível. Links diretos para partidas, campeonatos e perfis de atletas mantêm a temporada do próprio registro. Rascunhos e jogadas são separados por técnico, equipe e temporada; a migração preserva as pranchetas existentes em 2024/25. Atletas usam identificadores de registro por temporada e equipe para não substituir vínculos históricos.
 
@@ -137,7 +143,7 @@ $env:RUN_DATASET_TESTS='1'
 
 Os testes isolam o banco e cobrem senha/sessão, papéis, privacidade, revisões, lances, encerramento, WebSocket, transações e importação real idempotente. `RUN_DATASET_TESTS=1` exige os quatro Parquet já baixados. As migrações e a API local usam PostgreSQL/PGlite; a suíte rápida usa SQLite temporário.
 
-Para rodar a suíte de API sobre PostgreSQL/PGlite, pare a API, defina `POSTGRES_TEST_URL` com a URL do banco e execute `python -m pytest tests/test_api.py tests/test_management.py tests/test_seasons.py tests/test_roster_safety.py tests/test_accounts.py tests/test_migrations.py -q`. Cada teste cria um schema exclusivo `camphoop_test_<uuid>`, aplica as migrações reais e remove apenas esse schema ao terminar. Não apaga as tabelas públicas nem o histórico importado. O usuário de teste precisa de permissão para criar schemas.
+Para rodar a suíte de API sobre PostgreSQL/PGlite, pare a API, defina `POSTGRES_TEST_URL` com a URL do banco e execute `python -m pytest tests/test_api.py tests/test_management.py tests/test_seasons.py tests/test_roster_safety.py tests/test_accounts.py tests/test_migrations.py tests/test_cleanup_ncaa.py -q`. Cada teste cria um schema exclusivo `camphoop_test_<uuid>`, aplica as migrações reais e remove apenas esse schema ao terminar. Não apaga as tabelas públicas nem o histórico importado. O usuário de teste precisa de permissão para criar schemas.
 
 No frontend: `npm test`, `npm run build`. Para validar as telas com a API local em execução: `npx playwright install chromium` e `npm run test:e2e`. Os testes não imprimem a senha. Capturas e relatórios ficam ignorados pelo Git.
 

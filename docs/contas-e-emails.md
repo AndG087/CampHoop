@@ -25,6 +25,19 @@ Sem SMTP configurado, as mensagens são salvas em arquivos JSON em `backend/data
 
 Para testar um convite, crie a conta da pessoa convidada, confirme seu e-mail e aceite o convite com o endereço correspondente. As notificações do sino aparecem dentro do CampHoop, independentemente de envio externo.
 
+## Vincular uma conta ao atleta cadastrado
+
+1. Como responsável pelo clube, abra o perfil do atleta que cadastrou e clique em **Vincular conta**.
+2. Informe o e-mail da pessoa e clique em **Enviar convite de atleta**. A equipe e o cadastro individual já ficam selecionados.
+3. A pessoa entra na conta desse e-mail, abre **Convites** e aceita. Se ainda não confirmou o e-mail, precisa concluir a confirmação antes de aceitar.
+4. Após o aceite, essa conta passa a ter perfil de atleta, com acesso ao seu cadastro, equipe e dados privados. Não é criado outro atleta.
+
+Contas já cadastradas recebem uma notificação dentro do CampHoop. O convite também entra na fila de mensagens, usando captura local ou SMTP conforme a configuração. Um membro básico do clube pode aceitar um novo convite de atleta; seu perfil só muda no aceite.
+
+O responsável pode consultar a conta vinculada ou revogar um convite pendente pelo mesmo botão. Para trocar o destinatário de um convite pendente, revogue-o primeiro. Um cadastro já associado a outra pessoa não pode ser reivindicado por outro e-mail, inclusive em outra temporada.
+
+No desenvolvimento, a Marina e outras contas de técnico de teste também podem convidar para os clubes e equipes próprios que cadastraram. As equipes e atletas NCAA continuam somente leitura. Essa permissão de convite para contas fictícias fica desativada em produção; os destinatários continuam usando contas reais com e-mail confirmado.
+
 Confirmações expiram em 24 horas, convites em sete dias e recuperação de senha em 30 minutos. Os links são de uso único, com tokens armazenados como hash no banco. A recuperação de senha encerra as sessões anteriores.
 
 ## Envio real opcional
@@ -49,6 +62,6 @@ Na raiz do projeto:
 powershell -ExecutionPolicy Bypass -File backend/scripts/test-accounts.ps1
 ```
 
-O script cria uma base SQLite temporária vazia, inicia API e frontend nas portas 8001 e 5174, usa entrega local e testa duas contas. Ao terminar, encerra seus processos e limpa somente o diretório temporário criado por ele. Os dados NCAA do ambiente principal são preservados.
+O script cria uma base SQLite temporária sem dados NCAA, com uma Marina fictícia exclusiva para o teste. Inicia API e frontend nas portas 8001 e 5174, usa entrega local e testa contas reais e o convite da Marina para um atleta já cadastrado. Ao terminar, encerra seus processos e limpa somente o diretório temporário criado por ele. Os dados NCAA do ambiente principal são preservados.
 
 Use `-KeepData` para manter os arquivos de diagnóstico ou `-ChromiumExecutable` para informar o caminho de um Chromium instalado. As migrações reais e os controles de acesso também podem ser testados em schemas isolados de PostgreSQL/PGlite, conforme `backend/README.md`.

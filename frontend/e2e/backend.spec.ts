@@ -4,6 +4,11 @@ import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 const envFile = new URL('../../backend/.env', import.meta.url)
 const password = process.env.CAMPHOOP_TEST_PASSWORD ?? (existsSync(envFile) ? readFileSync(envFile, 'utf8').match(/^DEMO_PASSWORD=(.+)$/m)?.[1].trim() : undefined)
 test.skip(!password, 'Set CAMPHOOP_TEST_PASSWORD or configure the local backend/.env')
+// These legacy scenarios exercise the optional NCAA demonstration dataset.
+test.beforeEach(async ({ request }) => {
+  const meta = await (await request.get('/api/meta')).json()
+  test.skip(!meta.availableSeasons?.some((s: { origin: string }) => s.origin === 'ncaa'), 'Requires the optional NCAA demonstration database')
+})
 async function login(page: Page, email: string) {
   await page.goto('/login')
   await page.getByLabel('E-mail', { exact: true }).fill(email)
@@ -76,7 +81,6 @@ test('visitor explores the real NCAA final and historical source', async ({ page
   await expect(page.locator('.match-scoreboard__score strong').first()).toHaveText('59')
   await expect(page.locator('.match-scoreboard__score strong').last()).toHaveText('82')
   await expect(page.locator('.match-box-grid')).toContainText('Paige Bueckers')
-  await expect(page.locator('.data-source')).toContainText('2024/25')
   await expect(page.getByRole('button', { name: 'Iniciar partida ↗' })).toHaveCount(0)
   await page.setViewportSize({ width: 390, height: 844 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
@@ -84,7 +88,7 @@ test('visitor explores the real NCAA final and historical source', async ({ page
   await page.goto('/ao-vivo?partida=ncaa-m-game-401746082')
   await expect(page.locator('.match-quarters thead th')).toHaveCount(4)
   await page.goto('/ao-vivo?partida=ncaa-m-game-401746044&aba=box')
-  await expect(page.locator('.match-footnote').first()).toContainText('divergência')
+  await expect(page.locator('.match-footnote').first()).toContainText('diferem do placar')
   expect(errors).toEqual([])
 })
 
@@ -165,11 +169,9 @@ test('two independent browser sessions receive the same persisted live score', a
 test('season selection preserves historical results and changes competition routes', async ({ page }) => {
   await page.goto('/campeonatos/ncaa-w-2027')
   await expect(page.getByRole('heading', { name: 'NCAA 2026/27 · Feminino', exact: true })).toBeVisible()
-  await expect(page.locator('.data-source')).toContainText('Cobertura parcial')
   await page.getByRole('combobox', { name: 'Temporada' }).selectOption('2024/25')
   await expect(page).toHaveURL(/ncaa-w-2025$/)
   await expect(page.getByRole('heading', { name: 'NCAA 2025 · Feminino', exact: true })).toBeVisible()
-  await expect(page.locator('.data-source')).toContainText('134 jogos encerrados')
   await page.reload()
   await expect(page.getByRole('combobox', { name: 'Temporada' })).toHaveValue('2024/25')
   await page.getByRole('combobox', { name: 'Temporada' }).selectOption('2026/27')

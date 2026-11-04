@@ -30,7 +30,7 @@ export default function AthletesPage() {
   const query = params.get('busca') ?? ''
   const category = params.get('categoria') ?? ''
   const teamId = params.get('equipe') ?? ''
-  const origin = params.get('origem') ?? ''
+  const origin = params.get('origem') === 'proprio' ? 'proprio' : ''
 
   const athletes = useApi(listAthletes, 'athletes')
   const teams = useApi(listTeams, 'teams')
@@ -55,7 +55,7 @@ export default function AthletesPage() {
     (a: AthleteSummary) =>
       (!needle || normalize(a.name).includes(needle)) &&
       (!category || a.team.category === category) &&
-      (!teamId || a.team.id === teamId) && (origin === 'proprio' ? coachesTeam(user, a.team.id) : origin === 'ncaa' ? !!a.imported : true),
+      (!teamId || a.team.id === teamId) && (origin !== 'proprio' || coachesTeam(user, a.team.id)),
   )
   const hasFilters = !!(query || category || teamId || origin)
 
@@ -113,7 +113,7 @@ export default function AthletesPage() {
         </select>
       </div>
 
-      {remoteApi && <div className="roster-origin-filters" role="group" aria-label="Origem dos atletas">{[['', 'Todos os atletas'], ['proprio', 'Meus elencos'], ['ncaa', 'Importados da NCAA']].filter(([key]) => key !== 'proprio' || user?.role === 'tecnico').map(([key, label]) => <button type="button" className="chip" key={key} aria-pressed={origin === key} onClick={() => setFilter('origem', key)}>{label}</button>)}</div>}
+      {remoteApi && user?.role === 'tecnico' && <div className="roster-origin-filters" role="group" aria-label="Elencos exibidos">{[['', 'Todos os atletas'], ['proprio', 'Meus elencos']].map(([key, label]) => <button type="button" className="chip" key={key} aria-pressed={origin === key} onClick={() => setFilter('origem', key)}>{label}</button>)}</div>}
       <div className="card athlete-table">
         {athletes.loading && <p className="table-state">Carregando atletas…</p>}
         {athletes.error && <p className="table-state">Não foi possível carregar os atletas. Recarregue a página.</p>}

@@ -66,7 +66,7 @@ export default function TeamPage() {
       <Link to="/times" className="back-link">← Times</Link>
       <div className="page-head">
         <div>
-          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · {team.team.imported ? 'NCAA' : 'TEMPORADA'} {DATA_SEASON}</div>
+          <div className="eyebrow">{user?.teamId === team.team.id ? 'SUA EQUIPE' : 'PERFIL DA EQUIPE'} · TEMPORADA {DATA_SEASON}</div>
           <h1>{team.team.name}</h1>
           <p>{club.name} · {club.city}</p>
         </div>
@@ -76,7 +76,7 @@ export default function TeamPage() {
       </div>
 
       {notice && <p role="status" className="roster-notice">{notice}</p>}
-      <span className="roster-source">{team.team.imported ? 'IMPORTADO NCAA · SOMENTE LEITURA' : 'CADASTRO PRÓPRIO'} · {DATA_SEASON}</span>
+      {team.team.imported && <span className="roster-source">SOMENTE LEITURA</span>}
 
       <section className="team-hero">
         <div className="team-hero__id">

@@ -85,7 +85,6 @@ export default function LiveMatchPage() {
         {tab === 'box' && <BoxScore match={match} />}
         {tab === 'lineup' && <MatchLineups match={match} onSubstitute={operational && !locked ? (teamId) => setDialog({ type: 'sub', teamId }) : undefined} />}
         {tab === 'feed' && <MatchFeed match={match} />}
-        <p className="match-footnote match-demo-note">NCAA: calendário e box scores importados em lote. Novas partidas do CampHoop: registro persistente e atualização por WebSocket.</p>
         {user && dialog?.type === 'clock' && <ClockDialog key={id} match={match} seconds={seconds} user={user} run={run} busy={locked} onClose={() => setDialog(null)} />}
         {user && dialog?.type === 'sub' && <SubstitutionDialog key={`${id}:${dialog.teamId}`} match={match} teamId={dialog.teamId} user={user} run={run} busy={locked} onClose={() => setDialog(null)} />}
         {user && dialog?.type === 'finish' && <FinishMatchDialog match={match} user={user} run={run} busy={locked} onClose={() => setDialog(null)} />}

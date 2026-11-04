@@ -1,4 +1,3 @@
-import DataSource from '../components/DataSource'
 import SeasonSelector from '../components/SeasonSelector'
 import { DATA_SEASON } from '../api/client'
 import { Link } from 'react-router'
@@ -106,7 +105,7 @@ export default function PublicHomePage() {
             <h2 id="proximos" className="public__title">Próximos jogos</h2>
             <div className="card games">
               {games.loading && <p className="muted">Carregando jogos…</p>}
-              {games.data && !games.data.upcoming.length && <p className="muted">Não há próximos jogos cadastrados. Explore os resultados históricos da NCAA.</p>}
+              {games.data && !games.data.upcoming.length && <p className="muted">Os próximos jogos aparecerão aqui quando forem agendados.</p>}
               {games.data?.upcoming.map((g) => (
                 <article key={g.id} className="game">
                   <div className="game__when">
@@ -142,9 +141,9 @@ export default function PublicHomePage() {
             </div>
           </section>
         </div>
-      <DataSource /></main>
+      </main>
 
-      <footer className="public__inner public__foot">CampHoop · Dados históricos do basquete universitário americano</footer>
+      <footer className="public__inner public__foot">CampHoop · Organize sua equipe. Viva o jogo.</footer>
     </div>
   )
 }
