@@ -48,6 +48,15 @@ class NewAthlete(AthleteDetails):
 
 class EditAthlete(AthleteDetails):
     revision:int=Field(ge=1)
+    status:Literal['ativo','lesionado','afastado','desligado']='ativo'
+
+class RosterChange(Input):
+    """Quick roster actions; only the fields sent are changed."""
+    revision:int=Field(ge=1)
+    number:int|None=Field(default=None,ge=0,le=99)
+    captain:bool|None=None
+    starter:bool|None=None
+    inRoster:bool|None=None
 
 class LinkAthlete(Input):
     athleteId:Id

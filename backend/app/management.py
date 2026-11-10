@@ -67,7 +67,7 @@ def check_name(db,club_id,season,name,exclude=None):
 
 def check_jersey(db,team_id,season,number,exclude=None):
     if number is None:return
-    query=select(Athlete.id).where(Athlete.team_id==team_id,Athlete.season==season,Athlete.number==number)
+    query=select(Athlete.id).where(Athlete.team_id==team_id,Athlete.season==season,Athlete.number==number,Athlete.status!='desligado')
     if exclude:query=query.where(Athlete.id!=exclude)
     if db.scalar(query.limit(1)):raise HTTPException(409,'Este número já está em uso no elenco desta temporada.')
 
@@ -210,10 +210,46 @@ def edit_athlete(id:str,body:p.EditAthlete,user:User=Depends(require_user),db:Se
         for member in db.scalars(select(ClubMember).where(ClubMember.user_id.in_(account_ids-{user.id}),ClubMember.role=='atleta',ClubMember.club_id==old_club)):
             if member.athlete_id==id:member.team_id=body.teamId
         db.execute(update(User).where(User.role=='atleta',User.athlete_id==id).values(team_id=body.teamId))
-    check_jersey(db,body.teamId,a.season,body.number,id)
+    if values['status']!='desligado':check_jersey(db,body.teamId,a.season,body.number,id)
+    if old_team!=body.teamId or values['status']=='desligado':a.is_captain=a.is_starter=False
     a.team_id=body.teamId
     for key,value in values.items():setattr(a,key,value)
     a.revision+=1;db.commit();return {'id':id,'season':a.season}
+
+STARTERS=5
+
+@router.put('/athletes/{id}/roster')
+def change_roster(id:str,body:p.RosterChange,user:User=Depends(require_user),db:Session=Depends(get_db)):
+    """Coach quick actions: jersey, captain, starters, remove from or return to the team."""
+    a=get(db,Athlete,id);team_id=a.team_id;locked_teams(db,user,[team_id])
+    a=db.scalar(select(Athlete).where(Athlete.id==id).with_for_update().execution_options(populate_existing=True))
+    if a.source_id:raise HTTPException(403,'Cadastro importado da NCAA é somente leitura.')
+    if a.revision!=body.revision or a.team_id!=team_id:raise HTTPException(409,'O atleta foi atualizado em outra tela. Recarregue a lista.')
+    require_period(db,team_id,a.season);ensure_idle(db,[team_id],a.season)
+    sent=body.model_fields_set
+    if 'inRoster' in sent and body.inRoster is not None:
+        if body.inRoster and a.status=='desligado':
+            check_jersey(db,team_id,a.season,a.number,id);a.status='ativo'
+        elif not body.inRoster and a.status!='desligado':
+            a.status='desligado';a.is_captain=a.is_starter=False
+    if 'number' in sent and body.number!=a.number:
+        if athlete_has_records(db,id):raise HTTPException(409,'O número está preservado pelos registros de jogo desta temporada. Crie um vínculo em outra temporada para trocar a camisa.')
+        if a.status!='desligado':check_jersey(db,team_id,a.season,body.number,id)
+        a.number=body.number
+    out=a.status=='desligado'
+    if body.captain is not None and body.captain!=a.is_captain:
+        if body.captain:
+            if out:raise HTTPException(409,'Insira o atleta no time antes de defini-lo como capitão.')
+            db.execute(update(Athlete).where(Athlete.team_id==team_id,Athlete.season==a.season,Athlete.id!=id,Athlete.is_captain.is_(True)).values(is_captain=False,revision=Athlete.revision+1))
+        a.is_captain=body.captain
+    if body.starter is not None and body.starter!=a.is_starter:
+        if body.starter:
+            if out:raise HTTPException(409,'Insira o atleta no time antes de defini-lo como titular.')
+            starters=db.scalar(select(func.count()).select_from(Athlete).where(Athlete.team_id==team_id,Athlete.season==a.season,Athlete.id!=id,Athlete.is_starter.is_(True)))
+            if starters>=STARTERS:raise HTTPException(409,f'O time já tem {STARTERS} titulares. Tire um atleta dos titulares antes.')
+        a.is_starter=body.starter
+    a.revision+=1;db.commit()
+    return {'id':id,'season':a.season,'revision':a.revision,'number':a.number,'captain':a.is_captain,'starter':a.is_starter,'status':a.status}
 
 @router.post('/roster-links')
 def link_athlete(body:p.LinkAthlete,user:User=Depends(require_user),db:Session=Depends(get_db)):

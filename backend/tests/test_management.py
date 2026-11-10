@@ -157,3 +157,43 @@ def test_same_season_transfer_is_allowed_before_games_and_blocked_after_records(
     edit=client.get('/api/management/athletes/'+ath).json();edit.pop('id');edit.pop('season');edit.pop('identityLocked',None)
     assert client.put('/api/management/athletes/'+ath,json={**edit,'teamId':a}).status_code==409
     assert client.get('/api/athletes/'+ath).json()['team']['id']==b
+
+def roster(client,ath,**change):
+    revision=client.get('/api/management/athletes/'+ath).json()['revision']
+    return client.put(f'/api/management/athletes/{ath}/roster',json={'revision':revision,**change})
+
+def listed(client,ath):
+    return next(a for a in client.get('/api/athletes?season=2026/27').json() if a['id']==ath)
+
+def test_coach_quick_roster_actions(client):
+    login(client,'tecnico');tid=make_team(client)
+    ids=[make_athlete(client,tid,f'Atleta {n}',n) for n in range(1,8)]
+    # Jersey: change, and refuse a number already in use.
+    assert roster(client,ids[0],number=23).json()['number']==23
+    assert roster(client,ids[1],number=23).status_code==409
+    # Captain: only one per team and season.
+    assert roster(client,ids[0],captain=True).json()['captain']
+    assert roster(client,ids[1],captain=True).status_code==200
+    assert not listed(client,ids[0])['captain'] and listed(client,ids[1])['captain']
+    # Starters: at most five.
+    for a in ids[:5]:assert roster(client,a,starter=True).status_code==200
+    r=roster(client,ids[5],starter=True);assert r.status_code==409 and '5 titulares' in r.json()['detail']
+    assert roster(client,ids[0],starter=False).status_code==200
+    assert roster(client,ids[5],starter=True).status_code==200
+    # Remove from the team: keeps the record, drops roles and frees the jersey.
+    removed=roster(client,ids[1],inRoster=False).json()
+    assert removed['status']=='desligado' and not removed['captain'] and not removed['starter']
+    assert roster(client,ids[1],captain=True).status_code==409
+    assert roster(client,ids[3],number=2).status_code==200
+    # Return to the team: blocked while its jersey is taken, then allowed.
+    assert roster(client,ids[1],inRoster=True).status_code==409
+    assert roster(client,ids[3],number=40).status_code==200
+    assert roster(client,ids[1],inRoster=True).json()['status']=='ativo'
+
+def test_quick_roster_actions_respect_ownership_and_revision(client):
+    login(client,'tecnico');tid=make_team(client);ath=make_athlete(client,tid)
+    assert client.put(f'/api/management/athletes/{ath}/roster',json={'revision':99,'captain':True}).status_code==409
+    login(client,'other')
+    assert client.put(f'/api/management/athletes/{ath}/roster',json={'revision':1,'captain':True}).status_code==403
+    login(client,'atleta')
+    assert client.put(f'/api/management/athletes/{ath}/roster',json={'revision':1,'captain':True}).status_code==403

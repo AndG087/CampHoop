@@ -119,3 +119,129 @@
     white-space: normal;
   }
 }
+
+/* Ações de elenco do técnico */
+.roster-badge {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--on-navy);
+  font: 600 9px var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.roster-badge--captain {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+}
+
+.athlete-row--out td {
+  color: var(--muted);
+}
+
+.roster-actions-col {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.roster-actions__toggle {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 11px var(--font-body);
+  cursor: pointer;
+}
+
+.roster-actions__toggle:hover,
+.roster-actions__toggle[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+
+.roster-actions__menu {
+  position: fixed;
+  z-index: 40;
+  display: grid;
+  width: 220px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: 0 14px 32px rgb(23 38 56 / 0.16);
+}
+
+.roster-actions__menu button {
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font: 12px var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.roster-actions__menu button:hover,
+.roster-actions__menu button:focus-visible {
+  background: var(--accent-soft);
+  outline: none;
+}
+
+.roster-actions__menu .roster-actions__danger {
+  margin-top: 4px;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0 0 6px 6px;
+  color: var(--live);
+}
+
+.roster-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid #efbd83;
+  border-radius: var(--radius-sm);
+  background: #fff6eb;
+  font-size: 12px;
+}
+
+.roster-notice--error {
+  border-color: var(--live);
+  background: #fdeee8;
+}
+
+.roster-notice button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roster-actions__dots {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .roster-actions__label {
+    display: none;
+  }
+
+  .roster-actions__dots {
+    display: inline;
+    font-size: 16px;
+    line-height: 1;
+  }
+}

@@ -91,7 +91,7 @@ class Snapshot:
         if a.birth_date:
             d = today()
             age = d.year - a.birth_date.year - ((d.month, d.day) < (a.birth_date.month, a.birth_date.day))
-        return {'id': a.id, 'season': a.season, 'revision':a.revision,'imported':bool(a.source_id),'name': a.name, 'number': a.number, 'position': a.position, 'photoUrl': a.photo_url, 'age': age, 'heightCm': a.height_cm, 'memberSince': a.member_since, 'status': a.status, 'team': self.team(a.team_id), 'games': len(lines), 'pointsPerGame': round(sum(r.points for r in lines) / len(lines), 1) if lines else 0}
+        return {'id': a.id, 'season': a.season, 'revision':a.revision,'imported':bool(a.source_id),'name': a.name, 'number': a.number, 'position': a.position, 'photoUrl': a.photo_url, 'age': age, 'heightCm': a.height_cm, 'memberSince': a.member_since, 'status': a.status, 'captain': a.is_captain, 'starter': a.is_starter, 'team': self.team(a.team_id), 'games': len(lines), 'pointsPerGame': round(sum(r.points for r in lines) / len(lines), 1) if lines else 0}
 
     def athlete_profile(self, id: str, viewer: User | None):
         a = self.athletes[id]

@@ -53,6 +53,7 @@ export const STATUS_LABEL: Record<AthleteStatus, string> = {
   ativo: 'EM ATIVIDADE',
   lesionado: 'LESÃO',
   afastado: 'AFASTAMENTO',
+  desligado: 'FORA DO ELENCO',
 }
 
 export function initials(name: string): string {
