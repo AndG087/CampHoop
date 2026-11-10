@@ -284,17 +284,6 @@
   color: var(--muted);
 }
 
-.notif::after {
-  content: '';
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--live);
-}
-
 .content {
   max-width: 1440px;
   margin: auto;
@@ -339,10 +328,6 @@
   .search {
     width: 140px;
     padding: 9px;
-  }
-
-  .notif {
-    display: none;
   }
 
   .content {

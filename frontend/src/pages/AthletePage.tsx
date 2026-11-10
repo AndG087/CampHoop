@@ -70,7 +70,7 @@ export default function AthletePage() {
 
       {accountNotice && <p role="status" className="roster-notice">{accountNotice}</p>}
       <span className="roster-source">TEMPORADA {athlete.season ?? DATA_SEASON}{athlete.imported ? ' · SOMENTE LEITURA' : ''}</span>
-      {linkingAccount && canLinkAccount && <AthleteAccountDialog athlete={athlete} onClose={() => setLinkingAccount(false)} onInvited={(email) => { setLinkingAccount(false); setAccountNotice(`Convite enviado para ${email}. A pessoa poderá vincular sua conta em Meus convites, depois de confirmar o e-mail.`) }} />}
+      {linkingAccount && canLinkAccount && <AthleteAccountDialog athlete={athlete} onClose={() => setLinkingAccount(false)} onInvited={(email) => { setLinkingAccount(false); setAccountNotice(`Convite enviado para ${email}. A pessoa poderá aceitar pelo sininho de notificações, na aba Convites, depois de confirmar o e-mail.`) }} />}
 
       <div className="athlete-layout">
         <aside className="card athlete-card">

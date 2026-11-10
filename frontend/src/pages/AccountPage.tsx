@@ -4,6 +4,7 @@ import { forgotPassword, getAccount, pendingInvitation, resendVerification, save
 import { useApi } from '../api/useApi'
 import { remoteApi } from '../api/client'
 import { useSession } from '../auth/session'
+import { openInbox } from '../components/NotificationBell'
 import './AccountPages.css'
 
 export default function AccountPage() {
@@ -24,7 +25,7 @@ export default function AccountPage() {
     {data && <div className="account-grid"><section className="card account-panel"><h2>{data.name}</h2><p>{data.email}</p><span className="pill">{data.isDemo ? 'CONTA DE TESTE' : data.emailVerified ? 'E-MAIL CONFIRMADO' : 'CONFIRMAÇÃO PENDENTE'}</span>
       {data.isDemo ? <p className="account-note">Esta é uma conta fictícia para testar o sistema. <Link to="/cadastro">Crie uma conta real</Link> para usar sua própria identidade no CampHoop.</p> : !data.emailVerified ? <><p>Confirme seu e-mail para criar um clube ou aceitar convites.</p><button className="btn btn--accent" disabled={busy} onClick={() => void action(resendVerification, 'Enviamos um novo link de confirmação.')}>Reenviar confirmação</button></> : <><p>Sua conta está pronta para participar de clubes e equipes.</p><Link className="btn btn--accent" to="/clubes">Organizar meus clubes</Link></>}
       {!data.isDemo && <button className="btn btn--ghost" disabled={busy} onClick={() => void action(() => forgotPassword(data.email), 'Se houver uma conta elegível, enviaremos um link para definir sua senha.')}>{data.hasPassword ? 'Redefinir minha senha' : 'Criar senha para entrar por e-mail'}</button>}
-    </section><section className="card account-panel"><h2>Notificações por e-mail</h2><p>Receba novidades sobre os vínculos do seu clube. Mensagens de segurança e convites continuam sendo enviados quando necessários.</p><label className="account-check"><input type="checkbox" disabled={busy || data.isDemo} checked={data.emailNotifications ?? true} onChange={(e) => void action(() => savePreferences(e.target.checked), 'Preferência de e-mail atualizada.')} /> Receber avisos do meu clube por e-mail</label><Link className="btn btn--ghost" to="/notificacoes">Abrir notificações</Link>{data.mail.transport === 'capture' && <p className="account-note">As mensagens deste ambiente são salvas apenas na caixa local de desenvolvimento. O envio externo está desativado.</p>}</section>
+    </section><section className="card account-panel"><h2>Notificações por e-mail</h2><p>Receba novidades sobre os vínculos do seu clube. Mensagens de segurança e convites continuam sendo enviados quando necessários.</p><label className="account-check"><input type="checkbox" disabled={busy || data.isDemo} checked={data.emailNotifications ?? true} onChange={(e) => void action(() => savePreferences(e.target.checked), 'Preferência de e-mail atualizada.')} /> Receber avisos do meu clube por e-mail</label><button type="button" className="btn btn--ghost" onClick={() => openInbox('avisos')}>Abrir notificações</button>{data.mail.transport === 'capture' && <p className="account-note">As mensagens deste ambiente são salvas apenas na caixa local de desenvolvimento. O envio externo está desativado.</p>}</section>
     </div>}
   </>
 }
