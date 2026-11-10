@@ -6,3 +6,5 @@ O ambiente principal usa os clubes, equipes e atletas cadastrados no CampHoop. A
 
 Consulte [backend/README.md](backend/README.md) para instalar, iniciar a API e o banco, acessar as contas locais e executar os testes. O frontend está em `frontend/`; `outputs/camphoop-prototipo.html` preserva a referência visual original.
 
+A [proposta PostgreSQL do diagrama do Felipe](docs/modelo-postgresql.md) está disponível para revisão, com SQL executável e teste isolado. Ela ainda não substitui o banco usado pela aplicação.
+
