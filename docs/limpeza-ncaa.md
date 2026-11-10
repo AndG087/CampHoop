@@ -1,6 +1,6 @@
 # Limpeza e arquivo da NCAA
 
-A inicialização padrão do CampHoop executa migrações, preserva ou cria as contas locais e inicia a API. Não importa NCAA. As capturas e importadores opcionais continuam disponíveis para uma demonstração separada.
+A inicialização padrão do CampHoop executa migrações, preserva ou cria as contas locais e inicia a API. Os importadores da NCAA foram removidos do projeto. Este guia serve para limpar bases locais que ainda tenham dados de uma importação antiga.
 
 ## Conferir e limpar
 
@@ -61,4 +61,4 @@ O módulo `app.database_backup.restore` só restaura em tabelas vazias e verific
 
 Recarregue o navegador. A lista principal passa a mostrar apenas os cadastros preservados, e temporadas sem importação deixam de aparecer. O início normal não recria a NCAA.
 
-Os arquivos Parquet originais continuam guardados localmente, e os manifestos e importadores continuam no repositório. A importação explícita deve ser feita em uma base separada quando desejar retomar a demonstração NCAA.
+Os importadores da NCAA foram removidos do projeto: depois da limpeza, não há como os dados voltarem. Se houver arquivos `.parquet` antigos em `backend/data/`, eles não são mais usados e podem ser apagados.

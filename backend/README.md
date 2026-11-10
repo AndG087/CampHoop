@@ -57,48 +57,13 @@ A fila de e-mails usa corpos criptografados, tentativas limitadas, espera entre 
 
 Para testar do zero sem apagar a base principal, execute `scripts/test-accounts.ps1`. Ele cria um diretório temporário verificado, uma base SQLite sem importações, API na porta 8001 e frontend na 5174. O teste cadastra duas contas, captura e-mails localmente, aceita convite, confere notificações, revoga acesso e recupera a senha. Depois, encerra apenas seus próprios processos e remove o diretório que criou. `-KeepData` preserva o diagnóstico; schemas PostgreSQL isolados validam as migrações e regras reais separadamente.
 
-## Base opcional da NCAA
+## NCAA removida
 
-O ambiente principal funciona com os cadastros próprios. `scripts/start-api.ps1` não importa NCAA. A captura anterior fica em um backup privado, com uma cópia SQLite cuja restauração foi verificada. Para conferir a simulação, executar a limpeza ou consultar o arquivo, veja [limpeza e backup da NCAA](../docs/limpeza-ncaa.md).
-
-Os importadores abaixo permanecem disponíveis para uso explícito em uma base de demonstração separada. `scripts/start-api.ps1 -ImportNcaa` também importa as capturas, por escolha explícita; esse parâmetro não deve ser usado na base principal limpa.
-
-Fonte: [SportsDataverse](https://github.com/sportsdataverse/sportsdataverse-data), arquivos Parquet de calendário e box scores ESPN. Importamos os **torneios nacionais da Division I de 2025, masculino e feminino**, da temporada **2024/25**: **136 equipes, 134 partidas encerradas e 2.039 atletas**. São 3.995 linhas individuais, incluindo quem não entrou em quadra. As médias excluem DNP. Não é uma integração de placares NCAA em tempo real nem a temporada regular completa.
-
-URLs, SHA-256, transformações, cobertura e anomalias estão em [ncaa-2025.manifest.json](ncaa-2025.manifest.json). Quando a base opcional está importada, sua cobertura fica em `/api/meta?season=2024/25`. O importador histórico filtra o torneio antes de converter as tabelas, evita duplicatas e recusa arquivos com checksum diferente do manifesto. Reexecutar não sobrescreve dados locais. Para atualizar o recorte histórico, revise o importador e as fontes antes de mudar o manifesto.
-
-```powershell
-./.venv/Scripts/python.exe -m app.import_ncaa
-# Reutiliza os arquivos baixados, sem rede:
-./.venv/Scripts/python.exe -m app.import_ncaa --offline
-```
-
-Dados demográficos ausentes continuam `null`. A categoria é **Universitário**, nunca Sub-17. Horários são convertidos para Brasília. Masculino: 2 tempos de 20 minutos; feminino: 4 períodos de 10; prorrogação: 5 minutos. O quadro de campanha usa aproveitamento nos jogos importados do mata-mata e **não representa ranking, chaveamento ou classificação oficial da NCAA**.
-
-Uma divergência da fonte é preservada e sinalizada: jogo masculino ESPN `401746044`, placar oficial **67–58**, soma dos pontos individuais **67–56**. O sistema não inventa os dois pontos ausentes. Estatísticas de equipe extraídas do placar usam o resultado oficial; estatísticas individuais usam os box scores disponíveis.
-
-### Temporada 2026/27
-
-Os arquivos terminados em **2027** correspondem à temporada acadêmica **2026/27**. A captura de 3 de novembro de 2026 contém **11.779 jogos**: **348 encerrados**, **11.430 agendados** e **1 adiado**; **10.452 registros de atletas**, em **1.429 equipes/adversários**. O calendário inclui adversários de outras divisões e não representa somente os membros da Division I. Os elencos refletem os atletas com box score publicado; equipes sem estatísticas podem estar sem elenco disponível.
-
-Os 348 jogos encerrados têm box scores na captura. Há **12 divergências** entre a soma dos pontos individuais e o placar, identificadas em cada partida. Foram excluídos **95 jogos com adversários TBD/identificadores negativos** e **35 linhas individuais sem identificador válido**, sem inventar equipes ou atletas. O manifesto [ncaa-2027.manifest.json](ncaa-2027.manifest.json) registra fontes, hashes, transformações e avisos. Placares de partidas agendadas são `null`; horários não definidos continuam ausentes.
-
-```powershell
-# Banco em execução, API parada:
-./.venv/Scripts/python.exe -m app.import_current
-# Reimportação da captura local, sem rede:
-./.venv/Scripts/python.exe -m app.import_current --offline
-# Baixa e valida uma nova captura publicada pelo provedor:
-./.venv/Scripts/python.exe -m app.import_current --refresh
-```
-
-A importação é idempotente e só altera registros importados de 2026/27. O histórico 2024/25 e os jogos criados pelo usuário são preservados. Reinicie a API e recarregue a página depois da atualização para carregar a nova data de captura. Não há coleta automática agendada nem transmissão de placares NCAA em tempo real. A importação ocorre somente quando solicitada explicitamente. Os arquivos locais podem ser reutilizados no modo offline. `--refresh` é explícito porque os arquivos da temporada em andamento são substituídos pelo provedor.
+O CampHoop funciona só com cadastros próprios. Os importadores da NCAA, os manifestos e o parâmetro `-ImportNcaa` foram removidos do projeto, e `scripts/start-api.ps1` não importa dados externos. Se a sua base local ainda tiver a NCAA de uma importação antiga, use o [guia de limpeza](../docs/limpeza-ncaa.md).
 
 O seletor de temporada aparece na área pública, no menu lateral e na barra móvel. A seleção é lembrada no navegador. Listas, perfis de equipes, médias, agenda e campeonatos usam `?season=2026/27` ou `?season=2024/25`; sem parâmetro, a API escolhe a captura mais recente disponível. Links diretos para partidas, campeonatos e perfis de atletas mantêm a temporada do próprio registro. Rascunhos e jogadas são separados por técnico, equipe e temporada; a migração preserva as pranchetas existentes em 2024/25. Atletas usam identificadores de registro por temporada e equipe para não substituir vínculos históricos.
 
 `GET /api/meta` lista as temporadas, cobertura, intervalo de datas dos jogos e data da captura. `GET /api/games` retorna até 200 partidas próximas da data atual por padrão, aceita `limit` (até 500), `offset` e `status`. Agenda e tabela dos campeonatos permitem consultar as demais partidas. Listas extensas da interface são exibidas progressivamente com **Carregar mais**.
-
-Créditos: SportsDataverse, autores de [hoopR-mbb-data](https://github.com/sportsdataverse/hoopR-mbb-data) e [wehoop-wbb-data](https://github.com/sportsdataverse/wehoop-wbb-data), dados originalmente coletados da ESPN. Os dois repositórios de basquete declaram os dados sob **CC BY 4.0** ([masculino](https://github.com/sportsdataverse/hoopR-mbb-data/blob/main/LICENSE.md), [feminino](https://github.com/sportsdataverse/wehoop-wbb-data/blob/main/LICENSE.md), [licença](https://creativecommons.org/licenses/by/4.0/)). O repositório agregador SportsDataverse declara [MIT](https://github.com/sportsdataverse/sportsdataverse-data/blob/main/LICENSE). CampHoop aplica recorte, normalização de IDs, conversão de fuso e cálculos; não tem vínculo ou endosso da NCAA, ESPN ou SportsDataverse. Imagens remotas preservam os URLs da fonte.
 
 ## Funcionalidades e acesso
 
@@ -141,7 +106,7 @@ $env:RUN_DATASET_TESTS='1'
 ./.venv/Scripts/python.exe -m alembic check
 ```
 
-Os testes isolam o banco e cobrem senha/sessão, papéis, privacidade, revisões, lances, encerramento, WebSocket, transações e importação real idempotente. `RUN_DATASET_TESTS=1` exige os quatro Parquet já baixados. As migrações e a API local usam PostgreSQL/PGlite; a suíte rápida usa SQLite temporário.
+Os testes isolam o banco e cobrem senha/sessão, papéis, privacidade, revisões, lances, encerramento, WebSocket, transações, limpeza da NCAA e migrações. As migrações e a API local usam PostgreSQL/PGlite; a suíte rápida usa SQLite temporário.
 
 Para rodar a suíte de API sobre PostgreSQL/PGlite, pare a API, defina `POSTGRES_TEST_URL` com a URL do banco e execute `python -m pytest tests/test_api.py tests/test_management.py tests/test_seasons.py tests/test_roster_safety.py tests/test_accounts.py tests/test_migrations.py tests/test_cleanup_ncaa.py -q`. Cada teste cria um schema exclusivo `camphoop_test_<uuid>`, aplica as migrações reais e remove apenas esse schema ao terminar. Não apaga as tabelas públicas nem o histórico importado. O usuário de teste precisa de permissão para criar schemas.
 
