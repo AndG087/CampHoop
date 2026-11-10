@@ -136,3 +136,12 @@ def test_tactics_geometry_ownership_revisions_and_private_drafts(client):
     login(client,'other')
     assert client.get('/api/tactics/t1').status_code==403
     assert client.get('/api/tactics/t2').json()['plays']==[]
+
+def test_live_match_opens_with_marked_starters(client,db):
+    from app.models import Athlete
+    with db() as s:
+        bench=list(s.scalars(select(Athlete).where(Athlete.team_id=='t1').order_by(Athlete.number,Athlete.name)))[-1]
+        bench.is_starter=True;s.commit();starter=bench.id
+    box=client.get('/api/matches/g').json()['box']
+    on=[a['athleteId'] for a in box if a['teamId']=='t1' and a['onCourt']]
+    assert starter in on and len(on)==5

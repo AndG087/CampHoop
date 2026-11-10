@@ -10,7 +10,7 @@ export type ManagementOptions = {
   clubs: (ClubFields & { id: string })[]
   athletes: { id: string; name: string; season: string; teamId: string; number: number | null; position: string }[]
 }
-export type AthleteFields = { teamId: string; name: string; number: number | null; position: string; birthDate: string | null; heightCm: number | null; memberSince: string | null; photoUrl: string | null; status: Extract<AthleteStatus, 'ativo' | 'lesionado' | 'afastado'> }
+export type AthleteFields = { teamId: string; name: string; number: number | null; position: string; birthDate: string | null; heightCm: number | null; memberSince: string | null; photoUrl: string | null; status: Extract<AthleteStatus, 'ativo' | 'lesionado' | 'afastado' | 'desligado'> }
 export type AthleteEdit = AthleteFields & { id: string; season: string; revision: number; identityLocked: boolean }
 export const getManagementOptions = (season = DATA_SEASON) => request<ManagementOptions>(`/management/options?season=${season}`)
 export const createTeam = (data: TeamFields & { season: string; clubId?: string; club?: ClubFields }) => request<{ id: string; season: string }>('/management/teams', 'POST', { ...data, makeActive: true })
@@ -19,6 +19,9 @@ export const createTeamSeason = (id: string, data: TeamFields & { sourceSeason: 
 export const getAthleteEdit = (id: string) => request<AthleteEdit>(`/management/athletes/${id}`)
 export const createAthlete = (data: AthleteFields & { season: string }) => request<{ id: string; season: string }>('/management/athletes', 'POST', data)
 export const editAthlete = (id: string, data: AthleteFields & { revision: number }) => request<{ id: string; season: string }>(`/management/athletes/${id}`, 'PUT', data)
+export type RosterChange = { number?: number | null; captain?: boolean; starter?: boolean; inRoster?: boolean }
+/** Ações rápidas do técnico no elenco: camisa, capitão, titular, remover ou inserir no time. */
+export const changeRoster = (id: string, revision: number, change: RosterChange) => request<{ id: string; revision: number; number: number | null; captain: boolean; starter: boolean; status: AthleteStatus }>(`/management/athletes/${id}/roster`, 'PUT', { revision, ...change })
 export const linkAthlete = (data: { athleteId: string; teamId: string; season: string; number: number | null; position: string }) => request<{ id: string; season: string }>('/management/roster-links', 'POST', data)
 export const activateTeam = (teamId: string) => request('/management/active-team', 'POST', { teamId })
 

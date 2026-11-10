@@ -5,7 +5,7 @@
 
 export type Category = 'Sub-13' | 'Sub-15' | 'Sub-17' | 'Universitário'
 export type Gender = 'Feminino' | 'Masculino' | 'Misto'
-export type AthleteStatus = 'ativo' | 'lesionado' | 'afastado' | 'historico' | 'registrado'
+export type AthleteStatus = 'ativo' | 'lesionado' | 'afastado' | 'historico' | 'registrado' | 'desligado'
 
 export type Club = {
   id: string
@@ -40,6 +40,10 @@ export type AthleteSummary = {
   heightCm: number | null
   memberSince: string | null // AAAA-MM
   status: AthleteStatus
+  /** Capitão da equipe na temporada. */
+  captain?: boolean
+  /** Faz parte do quinteto titular. */
+  starter?: boolean
   team: Team
   games: number
   pointsPerGame: number

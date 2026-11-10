@@ -1,12 +1,13 @@
 import { DATA_SEASON, remoteApi } from '../api/client'
 import { AthleteDialog } from './RosterDialogs'
+import { RosterActions, RosterBadges } from './RosterActions'
 import { useState } from 'react'
 import LoadMore from '../components/LoadMore'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { listAthletes, listTeams } from '../api/athletes'
 import type { AthleteSummary, Category } from '../api/types'
 import { useApi } from '../api/useApi'
-import { coachesTeam, isOwnAthlete } from '../auth/access'
+import { canEditAthlete, coachesTeam, isOwnAthlete } from '../auth/access'
 import { Can } from '../auth/guards'
 import { useSession } from '../auth/session'
 import Avatar from '../components/Avatar'
@@ -23,6 +24,7 @@ function normalize(text: string): string {
 export default function AthletesPage() {
   const [shown, setShown] = useState(50)
   const [creating, setCreating] = useState(false)
+  const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null)
   const { user } = useSession()
   const navigate = useNavigate()
   // Filtros ficam no endereço: voltar do perfil mantém a busca.
@@ -58,6 +60,10 @@ export default function AthletesPage() {
       (!teamId || a.team.id === teamId) && (origin !== 'proprio' || coachesTeam(user, a.team.id)),
   )
   const hasFilters = !!(query || category || teamId || origin)
+  // Ações de elenco: só para o técnico, nos cadastros próprios das equipes que ele gerencia.
+  const coach = remoteApi && user?.role === 'tecnico'
+  const canManage = (a: AthleteSummary) => !!coach && !a.imported && canEditAthlete(user, { id: a.id, teamId: a.team.id })
+  const showActions = !!coach && visible.some(canManage)
 
   return (
     <>
@@ -114,6 +120,7 @@ export default function AthletesPage() {
       </div>
 
       {remoteApi && user?.role === 'tecnico' && <div className="roster-origin-filters" role="group" aria-label="Elencos exibidos">{[['', 'Todos os atletas'], ['proprio', 'Meus elencos']].map(([key, label]) => <button type="button" className="chip" key={key} aria-pressed={origin === key} onClick={() => setFilter('origem', key)}>{label}</button>)}</div>}
+      {notice && <p className={`roster-notice${notice.error ? ' roster-notice--error' : ''}`} role={notice.error ? 'alert' : 'status'}>{notice.text}<button type="button" aria-label="Fechar aviso" onClick={() => setNotice(null)}>×</button></p>}
       <div className="card athlete-table">
         {athletes.loading && <p className="table-state">Carregando atletas…</p>}
         {athletes.error && <p className="table-state">Não foi possível carregar os atletas. Recarregue a página.</p>}
@@ -145,17 +152,19 @@ export default function AthletesPage() {
                       <th className="num hide-sm">J</th>
                       <th className="num">PTS/J</th>
                       <th className="hide-sm">Situação</th>
+                      {showActions && <th className="roster-actions-col">Ações</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {visible.slice(0, shown).map((a) => (
-                      <tr key={a.id} className="athlete-row" onClick={() => navigate(`/atletas/${a.id}`)}>
+                      <tr key={a.id} className={`athlete-row${a.status === 'desligado' ? ' athlete-row--out' : ''}`} onClick={() => navigate(`/atletas/${a.id}`)}>
                         <td>
                           <span className="athlete-cell">
                             <Avatar name={a.name} photoUrl={a.photoUrl} />
                             <Link to={`/atletas/${a.id}`} onClick={(e) => e.stopPropagation()}>
                               {a.name}
                             </Link>
+                            <RosterBadges athlete={a} />
                             {isOwnAthlete(user, { id: a.id, teamId: a.team.id }) && <span className="pill">VOCÊ</span>}
                           </span>
                         </td>
@@ -175,6 +184,12 @@ export default function AthletesPage() {
                             {STATUS_LABEL[a.status]}
                           </span>
                         </td>
+                        {showActions && (
+                          // Cliques no menu e nas janelas não abrem o perfil.
+                          <td className="roster-actions-col" onClick={(e) => e.stopPropagation()}>
+                            {canManage(a) && <RosterActions athlete={a} onNotice={(text, error = false) => setNotice({ text, error })} />}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

@@ -16,7 +16,7 @@ def event_json(e):
 def projection(db, g, s=None):
     s = s or Snapshot(db, g.season, game=g)
     roster = sorted((a for a in s.athletes.values() if a.team_id in (g.home_id,g.away_id)), key=lambda a:(a.number is None,a.number or 0,a.name))
-    initial = {tid:[a.id for a in roster if a.team_id == tid and a.status in ('ativo','historico','registrado')][:5] for tid in (g.home_id,g.away_id)}
+    initial = {tid:[a.id for a in sorted(roster, key=lambda a: not a.is_starter) if a.team_id == tid and a.status in ('ativo','historico','registrado')][:5] for tid in (g.home_id,g.away_id)}
     lineups = g.lineups or initial
     box = {a.id:{'athleteId':a.id,'teamId':a.team_id,'name':a.name,'number':a.number,'position':a.position,'eligible':a.status in ('ativo','historico','registrado'),'played':a.id in lineups.get(a.team_id,[]),'onCourt':a.id in lineups.get(a.team_id,[]),**dict.fromkeys(FIELDS,0)} for a in roster}
     evs = events(db,g)

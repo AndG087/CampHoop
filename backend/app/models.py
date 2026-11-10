@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from sqlalchemy import JSON, Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Index, text
+from sqlalchemy import JSON, Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Index, false, text
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -46,6 +46,8 @@ class TeamAuthorization(Base):
     resource: Mapped[str] = mapped_column(String(220))
     __table_args__ = (UniqueConstraint('team_id','season','kind','resource',name='team_authorization_unique'),)
 
+ACTIVE_JERSEY="source_id IS NULL AND number IS NOT NULL AND status <> 'desligado'"
+
 class Athlete(Base):
     __tablename__ = 'athletes'
     season: Mapped[str | None] = mapped_column(String(12), index=True)
@@ -63,9 +65,12 @@ class Athlete(Base):
     source_id: Mapped[str | None] = mapped_column(String(100), unique=True)
     person_id: Mapped[str | None] = mapped_column(String(100), index=True)
     revision: Mapped[int] = mapped_column(Integer, default=1)
+    is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    is_starter: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     __table_args__ = (
         UniqueConstraint('person_id','season',name='athlete_person_season_unique'),
-        Index('manual_jersey_unique','team_id','season','number',unique=True,postgresql_where=text('source_id IS NULL AND number IS NOT NULL'),sqlite_where=text('source_id IS NULL AND number IS NOT NULL')),
+        # Athletes removed from the team ('desligado') keep their history but free the jersey.
+        Index('manual_jersey_unique','team_id','season','number',unique=True,postgresql_where=text(ACTIVE_JERSEY),sqlite_where=text(ACTIVE_JERSEY)),
     )
 
 class User(Base):
