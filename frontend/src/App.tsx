@@ -1,3 +1,4 @@
+import { InboxRedirect } from './components/NotificationBell'
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router'
 import { RequirePermission, RequireSession } from './auth/guards'
@@ -19,8 +20,6 @@ import TeamsPage from './pages/TeamsPage'
 const AccountPage = lazy(() => import('./pages/AccountPage'))
 const ClubsPage = lazy(() => import('./pages/ClubsPage'))
 const ClubPage = lazy(() => import('./pages/ClubsPage').then((module) => ({ default: module.ClubPage })))
-const InvitationsPage = lazy(() => import('./pages/InvitationsPage'))
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 import { RegisterPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage, InvitationPage } from './pages/AuthPages'
 
 function LoadingPage({ children }: { children: ReactNode }) { return <Suspense fallback={<p className="muted" role="status">Carregando página…</p>}>{children}</Suspense> }
@@ -75,8 +74,8 @@ export default function App() {
           <Route path="conta" element={<LoadingPage><AccountPage /></LoadingPage>} />
           <Route path="clubes" element={<LoadingPage><ClubsPage /></LoadingPage>} />
           <Route path="clubes/:clubId" element={<LoadingPage><ClubPage /></LoadingPage>} />
-          <Route path="convites" element={<LoadingPage><InvitationsPage /></LoadingPage>} />
-          <Route path="notificacoes" element={<LoadingPage><NotificationsPage /></LoadingPage>} />
+          <Route path="convites" element={<InboxRedirect tab="convites" />} />
+          <Route path="notificacoes" element={<InboxRedirect tab="avisos" />} />
           <Route
             path="quadro-tatico"
             element={

@@ -43,5 +43,5 @@
 .notification-card p { font-size: 13px; line-height: 1.8; color: var(--muted); }
 .notification-card time { font: 10px var(--font-mono); color: var(--muted); }
 .notification-card footer { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 15px; }
-.notif::after { display: none !important; }.notif__count { position: absolute; top: -5px; right: -6px; padding: 2px 5px; min-width: 17px; border-radius: 10px; color: white; background: var(--accent); font: 9px var(--font-mono); }
+
 @media(max-width: 760px) { .account-auth { grid-template-columns: minmax(0,1fr); }.account-auth__story { padding: 25px; gap: 20px; }.account-auth__story h1 { font-size: 34px; }.account-auth__story p, .account-auth__story footer { display: none; }.account-auth__body { align-items: flex-start; padding: 30px 23px; }.account-grid { grid-template-columns: minmax(0,1fr); }.account-panel { padding: 20px; }.notification-card { padding: 18px; }.notification-card header { align-items: flex-start; flex-direction: column; } }
